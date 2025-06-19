@@ -1,5 +1,6 @@
 import React from 'react';
 import { FileText, Users, Package, TrendingUp, Calculator, Receipt } from 'lucide-react';
+import CompanyManagement from './CompanyManagement';
 
 interface ModuleContentProps {
   moduleId: string;
@@ -87,6 +88,11 @@ const moduleContent: { [key: string]: { title: string; description: string; icon
 };
 
 export default function ModuleContent({ moduleId }: ModuleContentProps) {
+  // Handle specific module cases
+  if (moduleId === 'company-management') {
+    return <CompanyManagement />;
+  }
+
   const content = moduleContent[moduleId];
   
   if (!content) {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Menu, ChevronDown, User, Settings, LogOut, HelpCircle, AlertTriangle, Clock, CheckCircle, X } from 'lucide-react';
+import { Bell, Menu, ChevronDown, User, Settings, LogOut, HelpCircle, AlertTriangle, Clock, CheckCircle, X, Globe } from 'lucide-react';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -13,6 +13,20 @@ interface Notification {
   time: string;
   isRead: boolean;
 }
+
+interface Language {
+  code: string;
+  name: string;
+  flag: string;
+}
+
+const languages: Language[] = [
+  { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'zh', name: '中文', flag: '🇨🇳' },
+  { code: 'ja', name: '日本語', flag: '🇯🇵' },
+  { code: 'ko', name: '한국어', flag: '🇰🇷' }
+];
 
 const notifications: Notification[] = [
   {
@@ -60,20 +74,36 @@ const notifications: Notification[] = [
 export default function Header({ onToggleSidebar }: HeaderProps) {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
 
   const toggleUserDropdown = () => {
     setIsUserDropdownOpen(!isUserDropdownOpen);
     setIsNotificationDropdownOpen(false);
+    setIsLanguageDropdownOpen(false);
   };
 
   const toggleNotificationDropdown = () => {
     setIsNotificationDropdownOpen(!isNotificationDropdownOpen);
     setIsUserDropdownOpen(false);
+    setIsLanguageDropdownOpen(false);
+  };
+
+  const toggleLanguageDropdown = () => {
+    setIsLanguageDropdownOpen(!isLanguageDropdownOpen);
+    setIsUserDropdownOpen(false);
+    setIsNotificationDropdownOpen(false);
   };
 
   const closeDropdowns = () => {
     setIsUserDropdownOpen(false);
     setIsNotificationDropdownOpen(false);
+    setIsLanguageDropdownOpen(false);
+  };
+
+  const selectLanguage = (language: Language) => {
+    setSelectedLanguage(language);
+    setIsLanguageDropdownOpen(false);
   };
 
   const getNotificationIcon = (type: string) => {
@@ -127,6 +157,66 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Language Dropdown */}
+          <div className="relative">
+            <button 
+              className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={toggleLanguageDropdown}
+            >
+              <span className="text-lg">{selectedLanguage.flag}</span>
+              <span className="text-sm font-medium text-gray-700 hidden sm:block">
+                {selectedLanguage.code.toUpperCase()}
+              </span>
+              <ChevronDown 
+                size={14} 
+                className={`text-gray-400 transition-transform duration-200 ${
+                  isLanguageDropdownOpen ? 'rotate-180' : ''
+                }`} 
+              />
+            </button>
+
+            {/* Language Dropdown Menu */}
+            {isLanguageDropdownOpen && (
+              <>
+                {/* Backdrop */}
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={closeDropdowns}
+                />
+                
+                {/* Dropdown Content */}
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                  <div className="px-3 py-2 border-b border-gray-100">
+                    <div className="flex items-center space-x-2">
+                      <Globe size={16} className="text-gray-400" />
+                      <span className="text-sm font-medium text-gray-700">Chọn ngôn ngữ</span>
+                    </div>
+                  </div>
+                  
+                  <div className="py-1">
+                    {languages.map((language) => (
+                      <button
+                        key={language.code}
+                        onClick={() => selectLanguage(language)}
+                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                          selectedLanguage.code === language.code 
+                            ? 'bg-blue-50 text-blue-700' 
+                            : 'text-gray-700'
+                        }`}
+                      >
+                        <span className="text-lg">{language.flag}</span>
+                        <span className="flex-1 text-left">{language.name}</span>
+                        {selectedLanguage.code === language.code && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Notification Dropdown */}
           <div className="relative">
             <button 

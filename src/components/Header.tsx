@@ -3,6 +3,7 @@ import { Bell, Menu, ChevronDown, User, Settings, LogOut, HelpCircle, AlertTrian
 
 interface HeaderProps {
   onToggleSidebar: () => void;
+  onLogout: () => void;
 }
 
 interface Notification {
@@ -71,7 +72,7 @@ const notifications: Notification[] = [
   }
 ];
 
-export default function Header({ onToggleSidebar }: HeaderProps) {
+export default function Header({ onToggleSidebar, onLogout }: HeaderProps) {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
@@ -104,6 +105,11 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const selectLanguage = (language: Language) => {
     setSelectedLanguage(language);
     setIsLanguageDropdownOpen(false);
+  };
+
+  const handleLogout = () => {
+    closeDropdowns();
+    onLogout();
   };
 
   const getNotificationIcon = (type: string) => {
@@ -387,10 +393,13 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                   <div className="border-t border-gray-100 my-2"></div>
 
                   {/* Logout */}
-                  <a href="login" className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
                     <LogOut size={16} className="mr-3" />
                     Đăng xuất
-                  </a>
+                  </button>
                 </div>
               </>
             )}

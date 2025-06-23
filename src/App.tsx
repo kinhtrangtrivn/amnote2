@@ -14,6 +14,11 @@ function App() {
     setIsLoggedIn(true);
   };
 
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setActiveMenu('dashboard'); // Reset to dashboard when logging out
+  };
+
   const handleMenuSelect = (menuId: string) => {
     setActiveMenu(menuId);
   };
@@ -35,7 +40,10 @@ function App() {
       />
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onToggleSidebar={toggleSidebar} />
+        <Header 
+          onToggleSidebar={toggleSidebar} 
+          onLogout={handleLogout}
+        />
         
         <main className="flex-1 overflow-auto p-6">
           {activeMenu === 'dashboard' ? (

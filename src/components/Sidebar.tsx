@@ -202,7 +202,7 @@ export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobil
 
   if (isCollapsed && !isMobile) {
     return (
-      <div className="bg-white border-r border-gray-200 w-16 min-h-screen flex flex-col">
+      <div className="bg-white border-r border-gray-200 w-16 h-screen flex flex-col">
         <div className="p-3 border-b border-gray-200 flex-shrink-0">
           <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">A</span>

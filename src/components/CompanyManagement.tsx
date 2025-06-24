@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Eye, Edit, Trash2, Search, Filter, Building2, X, Save } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Search, Filter, Building2, X, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Company {
   id: string;
@@ -99,6 +99,7 @@ export default function CompanyManagement() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<Partial<Company>>({});
+  const [currentStep, setCurrentStep] = useState(1);
 
   const filteredCompanies = companies.filter(company =>
     company.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -110,6 +111,7 @@ export default function CompanyManagement() {
     setModalMode(mode);
     setSelectedCompany(company || null);
     setFormData(company || {});
+    setCurrentStep(1);
     setIsModalOpen(true);
   };
 
@@ -117,10 +119,28 @@ export default function CompanyManagement() {
     setIsModalOpen(false);
     setSelectedCompany(null);
     setFormData({});
+    setCurrentStep(1);
   };
 
   const handleInputChange = (field: keyof Company, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateStep1 = () => {
+    const requiredFields = ['companyCode', 'companyName', 'companyType', 'accountNumber', 'taxCode', 'province', 'address', 'stockCalculationMode'];
+    return requiredFields.every(field => formData[field as keyof Company]?.toString().trim());
+  };
+
+  const handleNext = () => {
+    if (currentStep === 1 && validateStep1()) {
+      setCurrentStep(2);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentStep === 2) {
+      setCurrentStep(1);
+    }
   };
 
   const handleSave = () => {
@@ -161,6 +181,7 @@ export default function CompanyManagement() {
   };
 
   const isViewMode = modalMode === 'view';
+  const canProceedToStep2 = validateStep1();
 
   return (
     <div className="space-y-6">
@@ -285,11 +306,38 @@ export default function CompanyManagement() {
           <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-xl font-semibold text-gray-900">
-                {modalMode === 'add' && 'Thêm công ty mới'}
-                {modalMode === 'view' && 'Thông tin công ty'}
-                {modalMode === 'edit' && 'Chỉnh sửa thông tin công ty'}
-              </h3>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {modalMode === 'add' && 'Thêm công ty mới'}
+                  {modalMode === 'view' && 'Thông tin công ty'}
+                  {modalMode === 'edit' && 'Chỉnh sửa thông tin công ty'}
+                </h3>
+                {!isViewMode && (
+                  <div className="flex items-center mt-2">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                        currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        1
+                      </div>
+                      <span className={`text-sm ${currentStep >= 1 ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+                        Thông tin bắt buộc
+                      </span>
+                    </div>
+                    <div className={`w-8 h-0.5 mx-2 ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                        currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        2
+                      </div>
+                      <span className={`text-sm ${currentStep >= 2 ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+                        Thông tin bổ sung
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={closeModal}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -300,15 +348,15 @@ export default function CompanyManagement() {
 
             {/* Modal Content */}
             <div className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Necessary Information */}
+              {/* Step 1: Required Information */}
+              {(currentStep === 1 || isViewMode) && (
                 <div className="space-y-6">
                   <div>
                     <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                       <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
                       Thông tin bắt buộc
                     </h4>
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Mã công ty <span className="text-red-500">*</span>
@@ -399,7 +447,7 @@ export default function CompanyManagement() {
                         </select>
                       </div>
 
-                      <div>
+                      <div className="lg:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Địa chỉ <span className="text-red-500">*</span>
                         </label>
@@ -413,7 +461,7 @@ export default function CompanyManagement() {
                         />
                       </div>
 
-                      <div>
+                      <div className="lg:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Phương thức tính kho <span className="text-red-500">*</span>
                         </label>
@@ -432,15 +480,17 @@ export default function CompanyManagement() {
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* Additional Information */}
+              {/* Step 2: Additional Information */}
+              {(currentStep === 2 || isViewMode) && (
                 <div className="space-y-6">
                   <div>
                     <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                       <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
                       Thông tin bổ sung
                     </h4>
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Tên giám đốc
@@ -528,7 +578,7 @@ export default function CompanyManagement() {
                         />
                       </div>
 
-                      <div>
+                      <div className="lg:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Ngày thành lập
                         </label>
@@ -543,26 +593,60 @@ export default function CompanyManagement() {
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-200">
-              <button
-                onClick={closeModal}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                {isViewMode ? 'Đóng' : 'Hủy'}
-              </button>
-              {!isViewMode && (
+            <div className="flex items-center justify-between p-6 border-t border-gray-200">
+              <div className="flex items-center space-x-4">
+                {!isViewMode && currentStep === 2 && (
+                  <button
+                    onClick={handlePrev}
+                    className="flex items-center space-x-2 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <ChevronLeft size={16} />
+                    <span>Quay lại</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-4">
                 <button
-                  onClick={handleSave}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={closeModal}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <Save size={16} />
-                  <span>{modalMode === 'add' ? 'Thêm' : 'Lưu'}</span>
+                  {isViewMode ? 'Đóng' : 'Hủy'}
                 </button>
-              )}
+                
+                {!isViewMode && (
+                  <>
+                    {currentStep === 1 && (
+                      <button
+                        onClick={handleNext}
+                        disabled={!canProceedToStep2}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                          canProceedToStep2
+                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        <span>Tiếp theo</span>
+                        <ChevronRight size={16} />
+                      </button>
+                    )}
+                    
+                    {currentStep === 2 && (
+                      <button
+                        onClick={handleSave}
+                        className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <Save size={16} />
+                        <span>{modalMode === 'add' ? 'Thêm' : 'Lưu'}</span>
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>

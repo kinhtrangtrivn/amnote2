@@ -238,7 +238,7 @@ export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobil
   }
 
   return (
-    <div className={`bg-white border-r border-gray-200 ${isMobile ? 'w-64' : 'w-64'} min-h-screen flex flex-col`}>
+    <div className={`bg-white border-r border-gray-200 ${isMobile ? 'w-64' : 'w-64'} h-screen flex flex-col`}>
       {/* Header */}
       <div className="p-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-3">

@@ -33,6 +33,7 @@ interface SidebarProps {
   activeMenu: string;
   onMenuSelect: (menuId: string) => void;
   isCollapsed: boolean;
+  isMobile?: boolean;
 }
 
 interface MenuGroup {
@@ -163,7 +164,7 @@ const iconMap: { [key: string]: React.ReactNode } = {
   File: <File size={16} />
 };
 
-export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed }: SidebarProps) {
+export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobile = false }: SidebarProps) {
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -199,7 +200,7 @@ export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed }: Sideb
 
   const filteredMenuGroups = filterMenuItems(menuGroups);
 
-  if (isCollapsed) {
+  if (isCollapsed && !isMobile) {
     return (
       <div className="bg-white border-r border-gray-200 w-16 min-h-screen flex flex-col">
         <div className="p-3 border-b border-gray-200 flex-shrink-0">
@@ -237,7 +238,7 @@ export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed }: Sideb
   }
 
   return (
-    <div className="bg-white border-r border-gray-200 w-64 min-h-screen flex flex-col">
+    <div className={`bg-white border-r border-gray-200 ${isMobile ? 'w-64' : 'w-64'} min-h-screen flex flex-col`}>
       {/* Header */}
       <div className="p-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-3">

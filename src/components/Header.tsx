@@ -4,6 +4,7 @@ import { Bell, Menu, ChevronDown, User, Settings, LogOut, HelpCircle, AlertTrian
 interface HeaderProps {
   onToggleSidebar: () => void;
   onLogout: () => void;
+  onMenuSelect: (menuId: string) => void;
 }
 
 interface Notification {
@@ -72,7 +73,7 @@ const notifications: Notification[] = [
   }
 ];
 
-export default function Header({ onToggleSidebar, onLogout }: HeaderProps) {
+export default function Header({ onToggleSidebar, onLogout, onMenuSelect }: HeaderProps) {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
@@ -110,6 +111,11 @@ export default function Header({ onToggleSidebar, onLogout }: HeaderProps) {
   const handleLogout = () => {
     closeDropdowns();
     onLogout();
+  };
+
+  const handleProfileClick = () => {
+    closeDropdowns();
+    onMenuSelect('profile');
   };
 
   const getNotificationIcon = (type: string) => {
@@ -373,7 +379,10 @@ export default function Header({ onToggleSidebar, onLogout }: HeaderProps) {
 
                   {/* Menu Items */}
                   <div className="py-2">
-                    <button className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    <button 
+                      onClick={handleProfileClick}
+                      className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
                       <User size={16} className="mr-3 text-gray-400" />
                       Thông tin cá nhân
                     </button>

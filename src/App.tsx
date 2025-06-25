@@ -98,6 +98,7 @@ function App() {
         <Header 
           onToggleSidebar={toggleSidebar} 
           onLogout={handleLogout}
+          onMenuSelect={handleMenuSelect}
         />
         
         <main className="flex-1 overflow-auto p-6">

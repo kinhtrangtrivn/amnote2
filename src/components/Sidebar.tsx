@@ -26,7 +26,8 @@ import {
   File, 
   ChevronRight, 
   ChevronDown,
-  Search 
+  Search,
+  User
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -60,6 +61,13 @@ const menuGroups: MenuGroup[] = [
     title: 'Tổng quan',
     items: [
       { id: 'dashboard', title: 'Dashboard Tổng Quan', icon: 'BarChart3' }
+    ]
+  },
+  {
+    id: 'account',
+    title: 'Tài khoản',
+    items: [
+      { id: 'profile', title: 'Thông tin cá nhân', icon: 'User' }
     ]
   },
   {
@@ -161,7 +169,8 @@ const iconMap: { [key: string]: React.ReactNode } = {
   TrendingUp: <TrendingUp size={16} />,
   Receipt: <Receipt size={16} />,
   Home: <Home size={16} />,
-  File: <File size={16} />
+  File: <File size={16} />,
+  User: <User size={16} />
 };
 
 export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobile = false }: SidebarProps) {

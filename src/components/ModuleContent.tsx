@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText, Users, Package, TrendingUp, Calculator, Receipt } from 'lucide-react';
 import CompanyManagement from './CompanyManagement';
 import ProfilePage from './ProfilePage';
+import HelpSupportPage from './HelpSupportPage';
 
 interface ModuleContentProps {
   moduleId: string;
@@ -96,6 +97,10 @@ export default function ModuleContent({ moduleId }: ModuleContentProps) {
 
   if (moduleId === 'profile') {
     return <ProfilePage />;
+  }
+
+  if (moduleId === 'help-support') {
+    return <HelpSupportPage />;
   }
 
   const content = moduleContent[moduleId];

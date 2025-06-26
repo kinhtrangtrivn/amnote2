@@ -118,6 +118,11 @@ export default function Header({ onToggleSidebar, onLogout, onMenuSelect }: Head
     onMenuSelect('profile');
   };
 
+  const handleHelpClick = () => {
+    closeDropdowns();
+    onMenuSelect('help-support');
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'error':
@@ -392,7 +397,10 @@ export default function Header({ onToggleSidebar, onLogout, onMenuSelect }: Head
                       Cài đặt tài khoản
                     </button>
                     
-                    <button className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    <button 
+                      onClick={handleHelpClick}
+                      className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
                       <HelpCircle size={16} className="mr-3 text-gray-400" />
                       Trợ giúp & Hỗ trợ
                     </button>

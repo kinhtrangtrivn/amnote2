@@ -1,29 +1,31 @@
+// CostObjectPage.tsx
+
 import React, { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
 
-/** Interface mô tả một Đối tượng tập hợp chi phí */
+/** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
   id: string;
   code: string;
   nameVi: string;
   nameEn: string;
   nameKo: string;
-  parentObject: string; // id của cha, hoặc '' nếu là root
+  parentObject: string; // id cha hoặc '' nếu root
   notes: string;
   createdDate: string;
   status: 'active' | 'inactive';
 }
 
 const CostObjectPage: React.FC = () => {
-  // --- Dữ liệu và state ---
+  // --- State dữ liệu ---
   const [doiTuongList, setDoiTuongList] = useState<DoiTuongTapHopChiPhi[]>([
-    { id: '1', code: 'CC001', nameVi: 'Phòng Sản Xuất', nameEn: 'Production Dept', nameKo: '생산부', parentObject: '', notes: 'Bộ phận sản xuất',    createdDate: '2024-01-15', status: 'active' },
-    { id: '2', code: 'CC002', nameVi: 'Phòng Marketing',   nameEn: 'Marketing Dept',  nameKo: '마케팅부', parentObject: '', notes: 'Bộ phận marketing',    createdDate: '2024-01-10', status: 'active' },
+    // Ví dụ dữ liệu khởi tạo
+    { id: '1', code: 'CC001', nameVi: 'Phòng Sản Xuất', nameEn: 'Production Dept', nameKo: '생산부', parentObject: '', notes: 'Bộ phận sản xuất', createdDate: '2024-01-15', status: 'active' },
+    { id: '2', code: 'CC002', nameVi: 'Phòng Marketing',   nameEn: 'Marketing Dept',  nameKo: '마케팅부', parentObject: '1', notes: 'Con của CC001',      createdDate: '2024-01-16', status: 'active' },
     { id: '3', code: 'CC003', nameVi: 'Phòng Kế Toán',     nameEn: 'Accounting Dept', nameKo: '회계부',  parentObject: '', notes: 'Bộ phận kế toán',       createdDate: '2024-01-05', status: 'active' },
-    // ... bạn có thể thêm dữ liệu con ở đây
   ]);
 
-  // Tree-view: lưu các parent đang mở
+  // Tree-view: giữ danh sách các parent đang expand
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
   const toggleExpand = (id: string) => {
     setExpandedParents(prev =>
@@ -38,7 +40,7 @@ const CostObjectPage: React.FC = () => {
     code: '', nameVi: '', nameEn: '', nameKo: '', parentObject: '', notes: ''
   });
 
-  // Search, chọn, bulk action, in/xuất, phân trang
+  // Search, chọn, bulk action, export, print, phân trang
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
@@ -46,7 +48,7 @@ const CostObjectPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // --- Các hàm xử lý ---
+  // --- Xử lý thêm / sửa / xóa ---
   const handleAdd = () => {
     setEditingItem(null);
     setFormData({ code: '', nameVi: '', nameEn: '', nameKo: '', parentObject: '', notes: '' });
@@ -82,12 +84,13 @@ const CostObjectPage: React.FC = () => {
     }
   };
 
+  // Chọn tất cả / từng mục
   const handleSelectAll = (checked: boolean) =>
     setSelectedItems(checked ? displayed.map(({ item }) => item.id) : []);
-
   const handleSelectOne = (id: string, checked: boolean) =>
     setSelectedItems(prev => checked ? [...prev, id] : prev.filter(x => x !== id));
 
+  // Lưu form
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingItem) {
@@ -106,13 +109,13 @@ const CostObjectPage: React.FC = () => {
     setIsModalOpen(false);
   };
 
+  // In ấn & Xuất Excel
   const handlePrint = (lang: 'vi' | 'en' | 'ko') => {
     const lbl = { vi: 'Tiếng Việt', en: 'English', ko: '한국어' }[lang];
-    alert(`Đang xuất báo cáo (${lbl})…`);
+    alert(`Đang in báo cáo (${lbl})…`);
     setShowPrintMenu(false);
   };
-
-  const handleExport = () => alert('Đang xuất ra Excel…');
+  const handleExport = () => alert('Đang xuất Excel…');
 
   // Đóng dropdown khi click ngoài
   useEffect(() => {
@@ -133,7 +136,7 @@ const CostObjectPage: React.FC = () => {
     item.nameKo.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // --- Xây dựng map cha → con ---
+  // --- Xây dựng cây ---  
   const childrenMap: Record<string, DoiTuongTapHopChiPhi[]> = {};
   filtered.forEach(item => {
     if (item.parentObject) {
@@ -141,15 +144,10 @@ const CostObjectPage: React.FC = () => {
       childrenMap[item.parentObject].push(item);
     }
   });
-
-  // --- Lấy root items ---
   const rootItems = filtered.filter(item => !item.parentObject);
 
-  // --- Flatten với depth để hiển thị tree-view ---
-  interface Flattened {
-    item: DoiTuongTapHopChiPhi;
-    depth: number;
-  }
+  // Flatten để render tree-view với depth
+  interface Flattened { item: DoiTuongTapHopChiPhi; depth: number; }
   const flattenWithDepth = (items: DoiTuongTapHopChiPhi[], depth = 0): Flattened[] =>
     items.reduce<Flattened[]>((acc, item) => {
       acc.push({ item, depth });
@@ -160,14 +158,13 @@ const CostObjectPage: React.FC = () => {
     }, []);
 
   const flattenedItems = flattenWithDepth(rootItems);
-  const totalPages = Math.ceil(flattenedItems.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const displayed = flattenedItems.slice(startIndex, startIndex + itemsPerPage);
+  const totalPages    = Math.ceil(flattenedItems.length / itemsPerPage);
+  const startIndex    = (currentPage - 1) * itemsPerPage;
+  const displayed     = flattenedItems.slice(startIndex, startIndex + itemsPerPage);
 
-  // Options cho select Đối tượng gốc: **flat list**
+  // **CHO SELECT ĐỐI TƯỢNG GỐC: flat toàn bộ list (cha & con)**
   const parentOptions = doiTuongList;
- 
-  // --- Render ---
+
   return (
     <div className="p-6 space-y-6">
       {/* HEADER & ACTIONS */}
@@ -177,16 +174,16 @@ const CostObjectPage: React.FC = () => {
           <p className="text-gray-600 mt-1">Quản lý các đối tượng tập hợp chi phí</p>
         </div>
         <div className="flex items-center space-x-3 mt-4 sm:mt-0">
-          {/* Print */}
+          {/* In ấn */}
           <div className="relative print-dropdown">
             <button onClick={() => setShowPrintMenu(m => !m)}
-              className="inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm"
+              className="inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
             >
               <Icons.Printer size={16}/>
               <span>In ấn</span>
             </button>
             {showPrintMenu && (
-              <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+              <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border z-10">
                 <button onClick={() => handlePrint('vi')}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm"
                 >
@@ -195,23 +192,23 @@ const CostObjectPage: React.FC = () => {
                 <button onClick={() => handlePrint('en')}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm"
                 >
-                  <Icons.FileText size={16} className="text-green-500"/> <span>English</span>
+                  <Icons.FileText size={16}/> <span>English</span>
                 </button>
                 <button onClick={() => handlePrint('ko')}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm"
                 >
-                  <Icons.FileText size={16} className="text-purple-500"/> <span>한국어</span>
+                  <Icons.FileText size={16}/> <span>한국어</span>
                 </button>
               </div>
             )}
           </div>
-          {/* Export Excel */}
+          {/* Xuất Excel */}
           <button onClick={handleExport}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-green-700"
           >
             <Icons.Download size={16}/> <span>Xuất Excel</span>
           </button>
-          {/* Add new */}
+          {/* Thêm mới */}
           <button onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-blue-700"
           >
@@ -221,7 +218,7 @@ const CostObjectPage: React.FC = () => {
       </div>
 
       {/* SEARCH & BULK ACTION */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+      <div className="bg-white rounded-xl shadow border p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="relative">
             <Icons.Search size={16}
@@ -232,7 +229,7 @@ const CostObjectPage: React.FC = () => {
               placeholder="Tìm kiếm mã, tên…"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
             />
           </div>
           {selectedItems.length > 0 && (
@@ -241,12 +238,13 @@ const CostObjectPage: React.FC = () => {
               <button onClick={handleBulkDelete}
                 className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-red-700"
               >
-                <Icons.Trash2 size={16}/><span>Xóa</span>
+                <Icons.Trash2 size={16}/> <span>Xóa</span>
               </button>
             </div>
           )}
         </div>
 
+        {/* TABLE */}
         <div className="overflow-x-auto">
           <table className="min-w-full table-auto">
             <thead className="bg-gray-50">
@@ -270,10 +268,9 @@ const CostObjectPage: React.FC = () => {
             <tbody className="divide-y divide-gray-200">
               {displayed.map(({ item, depth }) => {
                 const hasChildren = Boolean(childrenMap[item.id]?.length);
-                const isExpanded = expandedParents.includes(item.id);
-
+                const isExpanded  = expandedParents.includes(item.id);
                 return (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
@@ -297,11 +294,11 @@ const CostObjectPage: React.FC = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3"><span className="text-gray-900">{item.nameVi}</span></td>
-                    <td className="px-4 py-3"><span className="text-gray-700">{item.nameEn}</span></td>
-                    <td className="px-4 py-3"><span className="text-gray-700">{item.nameKo}</span></td>
+                    <td className="px-4 py-3">{item.nameVi}</td>
+                    <td className="px-4 py-3">{item.nameEn}</td>
+                    <td className="px-4 py-3">{item.nameKo}</td>
                     <td className="px-4 py-3">
-                      <span className="text-gray-600 text-sm truncate max-w-xs block" title={item.notes}>
+                      <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
                         {item.notes}
                       </span>
                     </td>
@@ -309,26 +306,21 @@ const CostObjectPage: React.FC = () => {
                       <div className="relative action-dropdown">
                         <button
                           onClick={() => setShowActionMenu(m => m === item.id ? null : item.id)}
-                          className="inline-flex items-center rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 px-2 py-1"
+                          className="inline-flex items-center text-gray-700 bg-gray-100 px-2 py-1 rounded-lg hover:bg-gray-200"
                         >
                           <Icons.MoreHorizontal size={16}/>
                         </button>
                         {showActionMenu === item.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-10">
                             <button onClick={() => handleEdit(item)}
                               className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm"
                             >
-                              <Icons.Eye size={16} className="text-blue-500"/><span>Xem chi tiết</span>
-                            </button>
-                            <button onClick={() => handleEdit(item)}
-                              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm"
-                            >
-                              <Icons.Edit size={16} className="text-green-500"/><span>Chỉnh sửa</span>
+                              <Icons.Edit size={16} className="text-green-500"/> <span>Chỉnh sửa</span>
                             </button>
                             <button onClick={() => handleDelete(item.id)}
                               className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm text-red-600"
                             >
-                              <Icons.Trash2 size={16}/><span>Xóa</span>
+                              <Icons.Trash2 size={16}/> <span>Xóa</span>
                             </button>
                           </div>
                         )}
@@ -344,25 +336,25 @@ const CostObjectPage: React.FC = () => {
         {/* PHÂN TRANG */}
         <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
           <div className="text-sm text-gray-700">
-            Hiển thị {startIndex + 1} - {Math.min(startIndex + displayed.length, flattenedItems.length)} của {flattenedItems.length} kết quả
+            Hiển thị {startIndex + 1}–{Math.min(startIndex + displayed.length, flattenedItems.length)} của {flattenedItems.length} kết quả
           </div>
           <div className="flex items-center space-x-2">
             <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100 disabled:opacity-50"
+              className="px-3 py-1 border rounded text-sm hover:bg-gray-100 disabled:opacity-50"
             >
               Trước
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button key={page} onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded text-sm ${currentPage === page ? 'border border-red-600 text-white bg-red-600' : 'border border-gray-300 hover:bg-gray-100'}`}
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button key={i+1} onClick={() => setCurrentPage(i+1)}
+                className={`px-3 py-1 border rounded text-sm ${currentPage === i+1 ? 'bg-red-600 text-white border-red-600' : 'hover:bg-gray-100'}`}
               >
-                {page}
+                {i+1}
               </button>
             ))}
             <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100 disabled:opacity-50"
+              className="px-3 py-1 border rounded text-sm hover:bg-gray-100 disabled:opacity-50"
             >
               Sau
             </button>
@@ -370,13 +362,13 @@ const CostObjectPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal thêm / sửa */}
+      {/* MODAL THÊM/SỬA */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-xl font-bold text-gray-900">
-                {editingItem ? 'Chỉnh sửa đối tượng tập hợp chi phí' : 'Thêm mới đối tượng tập hợp chi phí'}
+                {editingItem ? 'Chỉnh sửa đối tượng' : 'Thêm mới đối tượng'}
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
                 <Icons.X size={20} className="text-gray-500"/>
@@ -393,27 +385,32 @@ const CostObjectPage: React.FC = () => {
                     type="text" required
                     value={formData.code}
                     onChange={e => setFormData(d => ({ ...d, code: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập mã đối tượng"
                   />
                 </div>
-                {/* Đối tượng gốc */}
+                {/* Đối tượng gốc: show ALL */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Đối tượng gốc</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Đối tượng gốc
+                  </label>
                   <select
                     value={formData.parentObject}
                     onChange={e => setFormData(d => ({ ...d, parentObject: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                   >
                     <option value="">Không có cha</option>
                     {parentOptions.map(opt => (
-                      <option key={opt.id} value={opt.id}>{opt.code}</option>
+                      <option key={opt.id} value={opt.id}>
+                        {opt.code} – {opt.nameVi}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
+
+              {/* Các trường tên và ghi chú */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Tên tiếng Việt */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tên tiếng Việt <span className="text-red-500">*</span>
@@ -422,49 +419,53 @@ const CostObjectPage: React.FC = () => {
                     type="text" required
                     value={formData.nameVi}
                     onChange={e => setFormData(d => ({ ...d, nameVi: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập tên tiếng Việt"
                   />
                 </div>
-                {/* Tên tiếng Anh */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Anh</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tên tiếng Anh
+                  </label>
                   <input
                     type="text"
                     value={formData.nameEn}
                     onChange={e => setFormData(d => ({ ...d, nameEn: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập tên tiếng Anh"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Tên tiếng Hàn */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Hàn</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tên tiếng Hàn
+                  </label>
                   <input
                     type="text"
                     value={formData.nameKo}
                     onChange={e => setFormData(d => ({ ...d, nameKo: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập tên tiếng Hàn"
                   />
                 </div>
-                {/* Ghi chú */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ghi chú</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ghi chú
+                  </label>
                   <textarea
                     value={formData.notes}
                     onChange={e => setFormData(d => ({ ...d, notes: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                    placeholder="Nhập ghi chú (tùy chọn)"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                    placeholder="Nhập ghi chú"
                   />
                 </div>
               </div>
-              {/* Nút Hủy / Lưu */}
-              <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+
+              {/* Buttons */}
+              <div className="flex justify-end space-x-4 pt-4 border-t">
                 <button type="button" onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
                   Hủy
                 </button>

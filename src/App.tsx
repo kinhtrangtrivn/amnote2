@@ -5,6 +5,8 @@ import DashboardOverview from './components/DashboardOverview';
 import ModuleContent from './components/ModuleContent';
 import LoginPage from './components/LoginPage';
 
+import CostObjectPage from './components/CostObjectPage';
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeMenu, setActiveMenu] = useState('dashboard');
@@ -101,10 +103,10 @@ function App() {
           onMenuSelect={handleMenuSelect}
         />
         
-        <main className="flex-1 overflow-auto p-3 sm:p-6">
-          {activeMenu === 'dashboard' ? (
-            <DashboardOverview />
-          ) : (
+        <main className="flex-1 overflow-auto p-6">
+          {activeMenu === 'dashboard' && <DashboardOverview />}
+          {activeMenu === 'cost-center' && <CostObjectPage />}
+          {activeMenu !== 'dashboard' && activeMenu !== 'cost-center' && (
             <ModuleContent moduleId={activeMenu} />
           )}
         </main>

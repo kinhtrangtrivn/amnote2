@@ -31,13 +31,6 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     userId: '',
     password: ''
   });
-  
-  const [errors, setErrors] = useState({
-    companyTaxCode: '',
-    userId: '',
-    password: '',
-    general: ''
-  });
 
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordStep, setForgotPasswordStep] = useState<'email' | 'success'>('email');
@@ -45,72 +38,21 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {
-      companyTaxCode: '',
-      userId: '',
-      password: '',
-      general: ''
-    };
-
-    if (!formData.companyTaxCode.trim()) {
-      newErrors.companyTaxCode = 'Vui lòng nhập mã số thuế công ty';
-    } else if (!/^\d{10,13}$/.test(formData.companyTaxCode.trim())) {
-      newErrors.companyTaxCode = 'Mã số thuế không hợp lệ (10-13 chữ số)';
-    }
-
-    if (!formData.userId.trim()) {
-      newErrors.userId = 'Vui lòng nhập ID người dùng';
-    } else if (formData.userId.trim().length < 3) {
-      newErrors.userId = 'ID người dùng phải có ít nhất 3 ký tự';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Vui lòng nhập mật khẩu';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
-    }
-
-    setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error !== '');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
-
     setIsLoading(true);
-    setErrors(prev => ({ ...prev, general: '' }));
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Simulate login validation
-      if (formData.companyTaxCode === '0123456789' && 
-          formData.userId === 'admin' && 
-          formData.password === 'password123') {
-        onLogin();
-      } else {
-        setErrors(prev => ({ 
-          ...prev, 
-          general: 'Thông tin đăng nhập không chính xác. Vui lòng kiểm tra lại mã số thuế, ID người dùng và mật khẩu.' 
-        }));
-      }
+      // Automatically log in regardless of form data
+      onLogin();
     } catch (error) {
-      setErrors(prev => ({ 
-        ...prev, 
-        general: 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại sau.' 
-      }));
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -283,28 +225,17 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               <div className="flex items-start space-x-2">
                 <AlertCircle size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="text-sm">
-                  <p className="font-medium text-blue-900 mb-1">Thông tin đăng nhập demo:</p>
-                  <p className="text-blue-700">Mã số thuế: <span className="font-mono">0123456789</span></p>
-                  <p className="text-blue-700">ID người dùng: <span className="font-mono">admin</span></p>
-                  <p className="text-blue-700">Mật khẩu: <span className="font-mono">password123</span></p>
+                  <p className="font-medium text-blue-900 mb-1">Nhấn "Đăng nhập" để vào dashboard</p>
+                  <p className="text-blue-700">Không cần nhập thông tin đăng nhập</p>
                 </div>
               </div>
             </div>
-
-            {errors.general && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start space-x-2">
-                  <AlertCircle size={16} className="text-red-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-red-700">{errors.general}</p>
-                </div>
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Company Tax Code */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mã số thuế công ty <span className="text-red-500">*</span>
+                  Mã số thuế công ty
                 </label>
                 <div className="relative">
                   <Building2 size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -312,25 +243,17 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     type="text"
                     value={formData.companyTaxCode}
                     onChange={(e) => handleInputChange('companyTaxCode', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${
-                      errors.companyTaxCode ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                    }`}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                     placeholder="Nhập mã số thuế công ty"
                     maxLength={13}
                   />
                 </div>
-                {errors.companyTaxCode && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <AlertCircle size={14} className="mr-1" />
-                    {errors.companyTaxCode}
-                  </p>
-                )}
               </div>
 
               {/* User ID */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ID người dùng <span className="text-red-500">*</span>
+                  ID người dùng
                 </label>
                 <div className="relative">
                   <User size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -338,24 +261,16 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     type="text"
                     value={formData.userId}
                     onChange={(e) => handleInputChange('userId', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${
-                      errors.userId ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                    }`}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                     placeholder="Nhập ID người dùng"
                   />
                 </div>
-                {errors.userId && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <AlertCircle size={14} className="mr-1" />
-                    {errors.userId}
-                  </p>
-                )}
               </div>
 
               {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mật khẩu <span className="text-red-500">*</span>
+                  Mật khẩu
                 </label>
                 <div className="relative">
                   <Lock size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -363,9 +278,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
-                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${
-                      errors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                    }`}
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                     placeholder="Nhập mật khẩu"
                   />
                   <button
@@ -376,12 +289,6 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <AlertCircle size={14} className="mr-1" />
-                    {errors.password}
-                  </p>
-                )}
               </div>
 
               {/* Remember Me & Forgot Password */}

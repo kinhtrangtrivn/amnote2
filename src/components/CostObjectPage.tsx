@@ -213,8 +213,8 @@ const CostObjectPage: React.FC = () => {
       </div>
 
       {/* SEARCH & BULK ACTION */}
-      <div className="bg-white rounded-xl shadow border p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-xl shadow border ">
+        <div className="flex items-center justify-between p-6">
           <div className="relative">
             <Icons.Search size={16}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -244,7 +244,7 @@ const CostObjectPage: React.FC = () => {
           <table className="min-w-full table-auto">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3">
+                <th className="px-4 py-3 text-left">
                   <input
                     type="checkbox"
                     checked={selectedItems.length === displayed.length && displayed.length > 0}

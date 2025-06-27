@@ -164,7 +164,7 @@ export default function Header({ onToggleSidebar, onLogout, onMenuSelect }: Head
           </button>
           
           <div>
-            <div className="flex items-center space-x-2 text-xs text-gray-500">
+            <div className="hidden sm:flex items-center space-x-2 text-xs text-gray-500">
               <span>Trang chủ</span>
               <span>/</span>
               <span>Quản lý dữ liệu cơ bản</span>
@@ -345,7 +345,7 @@ export default function Header({ onToggleSidebar, onLogout, onMenuSelect }: Head
               <div className="w-7 h-7 bg-red-600 rounded-full flex items-center justify-center">
                 <span className="text-white text-xs font-medium">NL</span>
               </div>
-              <div className="text-sm">
+              <div className="text-sm hidden sm:block">
                 <div className="font-medium text-gray-900">Nguyễn Thị Lan</div>
                 <div className="text-xs text-gray-500">Kế toán trưởng</div>
               </div>

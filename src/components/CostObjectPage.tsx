@@ -477,7 +477,7 @@ const CostObjectPage: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div> 
       )}
     </div>
   );

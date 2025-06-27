@@ -299,7 +299,7 @@ const CostCenterManagement: React.FC = () => {
                 className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
               />
             </div>
-            <select className=" border border-gray-300 rounded-lg px-4 py-2 mb-4 sm:mt-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+            <select className=" border border-gray-300 rounded-lg px-4 py-2  focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
               <option value="">Tất cả trạng thái</option>
               <option value="active">Đang hoạt động</option>
               <option value="inactive">Ngừng hoạt động</option>

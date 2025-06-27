@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Eye, Edit, Trash2, Search, Filter, Building2, X, Save, ChevronLeft, ChevronRight } from 'lucide-react';
-
+asdas
 interface Company {
   id: string;
   companyCode: string;

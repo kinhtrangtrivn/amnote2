@@ -288,7 +288,7 @@ const CostCenterManagement: React.FC = () => {
       {/* Filters and Search */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="block sm:flex items-center space-x-4">
+          <div className="block sm:flex items-center ">
             <div className="relative">
               <Icons.Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
@@ -299,7 +299,7 @@ const CostCenterManagement: React.FC = () => {
                 className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
               />
             </div>
-            <select className=" border border-gray-300 rounded-lg  py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+            <select className=" border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
               <option value="">Tất cả trạng thái</option>
               <option value="active">Đang hoạt động</option>
               <option value="inactive">Ngừng hoạt động</option>

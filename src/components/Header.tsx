@@ -345,7 +345,7 @@ export default function Header({ onToggleSidebar, onLogout, onMenuSelect }: Head
               <div className="w-7 h-7 bg-red-600 rounded-full flex items-center justify-center">
                 <span className="text-white text-xs font-medium">NL</span>
               </div>
-              <div className="text-sm hidden sm:flex">
+              <div className="text-sm hidden sm:block">
                 <div className="font-medium text-gray-900">Nguyễn Thị Lan</div>
                 <div className="text-xs text-gray-500">Kế toán trưởng</div>
               </div>

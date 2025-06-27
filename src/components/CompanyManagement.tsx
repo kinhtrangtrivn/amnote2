@@ -187,7 +187,7 @@ export default function CompanyManagement() {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className=" sm:flex  items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <div className="p-3 bg-blue-50 rounded-lg">
               <Building2 className="text-blue-600" size={24} />

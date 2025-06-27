@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
 
-/** Interface mô tả một Đối tượng tập hợp chi phí */
+/** Mô tả một Đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
   id: string;
   code: string;
@@ -14,16 +14,16 @@ interface DoiTuongTapHopChiPhi {
   status: 'active' | 'inactive';
 }
 
-/** Component chính: Quản lý Đối tượng tập hợp chi phí */
 const CostCenterManagement: React.FC = () => {
-  // --- Dữ liệu và state ---
+  // --- Dữ liệu gốc & tree–view bảng ---
   const [doiTuongList, setDoiTuongList] = useState<DoiTuongTapHopChiPhi[]>([
-    { id: '1', code: 'CC001', nameVi: 'Phòng Sản Xuất',  nameEn: 'Production Department', nameKo: '생산부', parentObject: '', notes: 'Chịu trách nhiệm sản xuất',    createdDate: '2024-01-15', status: 'active' },
-    { id: '2', code: 'CC002', nameVi: 'Phòng Marketing',    nameEn: 'Marketing Department',   nameKo: '마케팅부', parentObject: '1', notes: 'Phụ trách marketing',           createdDate: '2024-01-10', status: 'active' },
-    { id: '3', code: 'CC003', nameVi: 'Phòng Kế Toán',     nameEn: 'Accounting Department',  nameKo: '회계부', parentObject: '', notes: 'Quản lý tài chính',              createdDate: '2024-01-05', status: 'active' },
+    { id: '1', code: 'CC001', nameVi: 'Phòng Sản Xuất',  nameEn: 'Production Department', nameKo: '생산부', parentObject: '',  notes: 'Chịu trách nhiệm sản xuất',    createdDate: '2024-01-15', status: 'active' },
+    { id: '2', code: 'CC002', nameVi: 'Phòng Marketing',   nameEn: 'Marketing Department',   nameKo: '마케팅부', parentObject: '1', notes: 'Phụ trách marketing',           createdDate: '2024-01-10', status: 'active' },
+    { id: '3', code: 'CC003', nameVi: 'Phòng Kế Toán',    nameEn: 'Accounting Department',  nameKo: '회계부', parentObject: '',  notes: 'Quản lý tài chính',             createdDate: '2024-01-05', status: 'active' },
+    { id: '4', code: 'CC004', nameVi: 'Team Digital',     nameEn: 'Digital Team',           nameKo: '디지털팀', parentObject: '2', notes: 'Con của Marketing',             createdDate: '2024-02-01', status: 'active' },
+    { id: '5', code: 'CC005', nameVi: 'Team SEO',         nameEn: 'SEO Team',               nameKo: 'SEO팀',    parentObject: '4', notes: 'Con của Team Digital',           createdDate: '2024-02-10', status: 'active' },
   ]);
-
-  // tree-view: lưu các parent đang mở
+  // state cho expand/collapse của bảng
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
   const toggleExpand = (id: string) => {
     setExpandedParents(prev =>
@@ -31,14 +31,24 @@ const CostCenterManagement: React.FC = () => {
     );
   };
 
-  // Modal thêm / sửa
+  // --- Trạng thái Modal thêm/sửa ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DoiTuongTapHopChiPhi | null>(null);
   const [formData, setFormData] = useState({
     code: '', nameVi: '', nameEn: '', nameKo: '', parentObject: '', notes: ''
   });
 
-  // Search, chọn, bulk, in/xuất, phân trang
+  // --- Dropdown “Đối tượng gốc” có tree---
+  const [showParentDropdown, setShowParentDropdown] = useState(false);
+  // lưu id các node đã expand trong dropdown
+  const [expandedParentOptions, setExpandedParentOptions] = useState<string[]>([]);
+  const toggleParentOptionExpand = (id: string) => {
+    setExpandedParentOptions(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  // --- Search, chọn, bulk, in/xuất, phân trang ---
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
@@ -46,7 +56,7 @@ const CostCenterManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // --- Lọc theo search ---
+  // Lọc dữ liệu theo search
   const filtered = doiTuongList.filter(item =>
     item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.nameVi.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -54,19 +64,17 @@ const CostCenterManagement: React.FC = () => {
     item.nameKo.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // --- Xây dựng map cha → con ---
+  // childrenMap chỉ cho bảng
   const childrenMap: Record<string, DoiTuongTapHopChiPhi[]> = {};
   filtered.forEach(item => {
     if (item.parentObject) {
-      childrenMap[item.parentObject] = childrenMap[item.parentObject] || [];
+      childrenMap[item.parentObject] ||= [];
       childrenMap[item.parentObject].push(item);
     }
   });
-
-  // Chỉ các root
   const rootItems = filtered.filter(item => !item.parentObject);
 
-  // --- Flatten theo tree-view ---
+  // flatten bảng theo thứ tự parent → children (khi expand)
   const flatten = (items: DoiTuongTapHopChiPhi[]): DoiTuongTapHopChiPhi[] =>
     items.reduce<DoiTuongTapHopChiPhi[]>((acc, item) => {
       acc.push(item);
@@ -75,27 +83,81 @@ const CostCenterManagement: React.FC = () => {
       }
       return acc;
     }, []);
-
   const flattenedList = flatten(rootItems);
   const totalPages = Math.ceil(flattenedList.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const displayed = flattenedList.slice(startIndex, startIndex + itemsPerPage);
 
-  // Options cho select Đối tượng gốc (chỉ root)
-  const parentOptions = doiTuongList.filter(item => !item.parentObject);
+  // childrenMapAll + rootItemsAll để dropdown parent show toàn bộ
+  const childrenMapAll: Record<string, DoiTuongTapHopChiPhi[]> = {};
+  doiTuongList.forEach(item => {
+    if (item.parentObject) {
+      childrenMapAll[item.parentObject] ||= [];
+      childrenMapAll[item.parentObject].push(item);
+    }
+  });
+  const rootItemsAll = doiTuongList.filter(item => !item.parentObject);
+
+  // các lớp indent cố định (depth tới 4)
+  const indentClasses = ['pl-0','pl-4','pl-8','pl-12','pl-16'];
+
+  // render đệ quy một option
+  const renderParentOption = (item: DoiTuongTapHopChiPhi, level: number) => {
+    const children = childrenMapAll[item.id] || [];
+    const isExpandedOpt = expandedParentOptions.includes(item.id);
+    const indent = indentClasses[level] ?? 'pl-16';
+
+    return (
+      <div key={item.id}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            {children.length > 0 && (
+              <button
+                onClick={e => { e.stopPropagation(); toggleParentOptionExpand(item.id); }}
+                className="px-2"
+              >
+                {isExpandedOpt
+                  ? <Icons.ChevronDown size={16}/>
+                  : <Icons.ChevronRight size={16}/>
+                }
+              </button>
+            )}
+            <div
+              onClick={() => {
+                setFormData(d => ({ ...d, parentObject: item.id }));
+                setShowParentDropdown(false);
+              }}
+              className={`cursor-pointer truncate ${formData.parentObject === item.id ? 'font-medium' : ''} ${indent}`}
+            >
+              {item.code}
+            </div>
+          </div>
+        </div>
+        {children.length > 0 && isExpandedOpt && (
+          children.map(child => renderParentOption(child, level + 1))
+        )}
+      </div>
+    );
+  };
 
   // --- Các hàm CRUD & hỗ trợ ---
   const handleAdd = () => {
     setEditingItem(null);
     setFormData({ code: '', nameVi: '', nameEn: '', nameKo: '', parentObject: '', notes: '' });
+    setExpandedParentOptions([]);  // reset dropdown expand state
     setIsModalOpen(true);
   };
   const handleEdit = (item: DoiTuongTapHopChiPhi) => {
     setEditingItem(item);
     setFormData({
-      code: item.code, nameVi: item.nameVi, nameEn: item.nameEn,
-      nameKo: item.nameKo, parentObject: item.parentObject, notes: item.notes
+      code: item.code,
+      nameVi: item.nameVi,
+      nameEn: item.nameEn,
+      nameKo: item.nameKo,
+      parentObject: item.parentObject,
+      notes: item.notes
     });
+    setExpandedParentOptions([]);  // reset
     setShowActionMenu(null);
     setIsModalOpen(true);
   };
@@ -127,8 +189,7 @@ const CostCenterManagement: React.FC = () => {
   const handleSelectOne = (id: string, checked: boolean) =>
     setSelectedItems(prev => checked ? [...prev, id] : prev.filter(x => x !== id));
   const handleBulkDelete = () => {
-    if (selectedItems.length > 0 &&
-        window.confirm(`Xóa ${selectedItems.length} mục đã chọn?`)) {
+    if (selectedItems.length && window.confirm(`Xóa ${selectedItems.length} mục đã chọn?`)) {
       setDoiTuongList(prev => prev.filter(x => !selectedItems.includes(x.id)));
       setSelectedItems([]);
     }
@@ -146,12 +207,13 @@ const CostCenterManagement: React.FC = () => {
       const t = e.target as Element;
       if (showPrintMenu && !t.closest('.print-dropdown')) setShowPrintMenu(false);
       if (showActionMenu && !t.closest('.action-dropdown')) setShowActionMenu(null);
+      if (showParentDropdown && !t.closest('.parent-dropdown'))
+        setShowParentDropdown(false);
     };
     document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
-  }, [showPrintMenu, showActionMenu]);
+  }, [showPrintMenu, showActionMenu, showParentDropdown]);
 
-  // --- Render ---
   return (
     <div className="p-6 space-y-6">
       {/* HEADER & ACTIONS */}
@@ -163,28 +225,32 @@ const CostCenterManagement: React.FC = () => {
         <div className="flex items-center space-x-3 mt-4 sm:mt-0">
           {/* In ấn */}
           <div className="relative print-dropdown">
-            <button onClick={() => setShowPrintMenu(v => !v)}
+            <button
+              onClick={() => setShowPrintMenu(v => !v)}
               className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-red-700"
             >
               <Icons.Printer size={16}/> <span>In ấn</span> <Icons.ChevronDown size={16}/>
             </button>
             {showPrintMenu && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
-                <button onClick={() => handlePrint('vi')}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm border-b border-gray-100"
-                >
-                  <Icons.FileText size={16} className="text-blue-500"/> <span>Tiếng Việt</span>
-                </button>
-                <button onClick={() => handlePrint('en')}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm border-b border-gray-100"
-                >
-                  <Icons.FileText size={16} className="text-green-500"/> <span>English</span>
-                </button>
-                <button onClick={() => handlePrint('ko')}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm"
-                >
-                  <Icons.FileText size={16} className="text-purple-500"/> <span>한국어</span>
-                </button>
+                {['vi','en','ko'].map(lang => (
+                  <button
+                    key={lang}
+                    onClick={() => handlePrint(lang as any)}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm border-b last:border-b-0 border-gray-100"
+                  >
+                    <Icons.FileText size={16}
+                      className={ lang==='vi'? 'text-blue-500'
+                                 : lang==='en'? 'text-green-500'
+                                 : 'text-purple-500' }
+                    />
+                    <span>{
+                      lang==='vi'? 'Tiếng Việt'
+                      : lang==='en'? 'English'
+                      : '한국어'
+                    }</span>
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -203,7 +269,7 @@ const CostCenterManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* SEARCH & BULK ACTION */}
+      {/* SEARCH & BULK */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="relative">
@@ -231,7 +297,7 @@ const CostCenterManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* DATA TABLE */}
+      {/* TABLE */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -263,7 +329,6 @@ const CostCenterManagement: React.FC = () => {
                   <tr key={item.id}
                       className={`hover:bg-gray-50 transition-colors ${isChild ? 'bg-gray-50' : ''}`}
                   >
-                    {/* Checkbox chọn */}
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
@@ -272,8 +337,6 @@ const CostCenterManagement: React.FC = () => {
                         className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                       />
                     </td>
-
-                    {/* Mã đối tượng + connector */}
                     <td className="px-4 py-3">
                       <div className="relative flex items-center">
                         {!isChild && hasChildren && (
@@ -295,21 +358,14 @@ const CostCenterManagement: React.FC = () => {
                         </span>
                       </div>
                     </td>
-
-                    {/* Các cột thông tin */}
                     <td className="px-4 py-3"><span className="text-gray-900">{item.nameVi}</span></td>
                     <td className="px-4 py-3"><span className="text-gray-700">{item.nameEn}</span></td>
                     <td className="px-4 py-3"><span className="text-gray-700">{item.nameKo}</span></td>
                     <td className="px-4 py-3">
-                      <span
-                        className="text-gray-600 text-sm truncate max-w-xs block"
-                        title={item.notes}
-                      >
+                      <span className="text-gray-600 text-sm truncate max-w-xs block" title={item.notes}>
                         {item.notes}
                       </span>
                     </td>
-
-                    {/* Thao tác */}
                     <td className="px-4 py-3 text-center">
                       <div className="relative action-dropdown">
                         <button
@@ -387,6 +443,7 @@ const CostCenterManagement: React.FC = () => {
                 <Icons.X size={20} className="text-gray-500"/>
               </button>
             </div>
+
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Mã đối tượng */}
@@ -402,21 +459,39 @@ const CostCenterManagement: React.FC = () => {
                     placeholder="Nhập mã đối tượng"
                   />
                 </div>
-                {/* Đối tượng gốc */}
-                <div>
+
+                {/* ĐỐI TƯỢNG GỐC (custom tree-dropdown) */}
+                <div className="parent-dropdown relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Đối tượng gốc</label>
-                  <select
-                    value={formData.parentObject}
-                    onChange={e => setFormData(d => ({ ...d, parentObject: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                  <div
+                    onClick={() => setShowParentDropdown(v => !v)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg cursor-pointer flex items-center justify-between"
                   >
-                    <option value="">Không có cha</option>
-                    {parentOptions.map(opt => (
-                      <option key={opt.id} value={opt.id}>{opt.code}</option>
-                    ))}
-                  </select>
+                    <span>
+                      {formData.parentObject
+                        ? doiTuongList.find(o => o.id === formData.parentObject)?.code
+                        : 'Không có cha'}
+                    </span>
+                    <Icons.ChevronDown size={16}/>
+                  </div>
+                  {showParentDropdown && (
+                    <div className="absolute mt-1 w-full max-h-60 overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                      {/* chọn None */}
+                      <div
+                        onClick={() => {
+                          setFormData(d => ({ ...d, parentObject: '' }));
+                          setShowParentDropdown(false);
+                        }}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      >
+                        Không có cha
+                      </div>
+                      {rootItemsAll.map(item => renderParentOption(item, 0))}
+                    </div>
+                  )}
                 </div>
               </div>
+
               {/* Tên & Ghi chú */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -460,7 +535,8 @@ const CostCenterManagement: React.FC = () => {
                   placeholder="Nhập ghi chú (tùy chọn)"
                 />
               </div>
-              {/* Nút Hủy / Lưu */}
+
+              {/* Hủy / Lưu */}
               <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
                 <button type="button" onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"

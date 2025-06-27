@@ -277,7 +277,7 @@ const CostCenterManagement: React.FC = () => {
           </button>
           <button 
             onClick={handleAdd}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center space-x-2"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
           >
             <Icons.Plus size={16} />
             <span>Thêm mới</span>

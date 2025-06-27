@@ -320,7 +320,7 @@ export default function CompanyManagement() {
                       }`}>
                         1
                       </div>
-                      <span className={`text-sm ${currentStep >= 1 ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+                      <span className={`text-sm hidden md:block ${currentStep >= 1 ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
                         Thông tin bắt buộc
                       </span>
                     </div>
@@ -331,7 +331,7 @@ export default function CompanyManagement() {
                       }`}>
                         2
                       </div>
-                      <span className={`text-sm ${currentStep >= 2 ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+                      <span className={`text-sm hidden md:block ${currentStep >= 2 ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
                         Thông tin bổ sung
                       </span>
                     </div>

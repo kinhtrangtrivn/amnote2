@@ -352,7 +352,7 @@ export default function CompanyManagement() {
               {(currentStep === 1 || isViewMode) && (
                 <div className="space-y-6">
                   <div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4 hidden md:flex items-center">
                       <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
                       Thông tin bắt buộc
                     </h4>

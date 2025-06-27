@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import * as Icons from 'lucide-react';
 
 interface CostCenter {
@@ -7,14 +7,14 @@ interface CostCenter {
   nameVi: string;
   nameEn: string;
   nameKo: string;
-  parentObject: string;   // lưu id của parent hoặc '' nếu root
+  parentObject: string; // lưu id của parent, hoặc '' nếu không có
   notes: string;
-  createdDate: string;
+  createdDate: string; // định dạng 'YYYY-MM-DD'
   status: 'active' | 'inactive';
 }
 
 const CostCenterManagement: React.FC = () => {
-  // dữ liệu mẫu với parentObject là id hoặc ''
+  // ----- State chính -----
   const [costCenters, setCostCenters] = useState<CostCenter[]>([
     {
       id: '1',
@@ -33,7 +33,7 @@ const CostCenterManagement: React.FC = () => {
       nameVi: 'Phòng Marketing',
       nameEn: 'Marketing Department',
       nameKo: '마케팅부',
-      parentObject: '1',  // con của id=1
+      parentObject: '1',
       notes: 'Phòng ban phụ trách marketing và bán hàng',
       createdDate: '2024-01-10',
       status: 'active'
@@ -44,43 +44,36 @@ const CostCenterManagement: React.FC = () => {
       nameVi: 'Phòng Kế Toán',
       nameEn: 'Accounting Department',
       nameKo: '회계부',
-      parentObject: '',   // root khác
+      parentObject: '',
       notes: 'Phòng ban quản lý tài chính và kế toán',
       createdDate: '2024-01-05',
       status: 'active'
     }
   ]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<keyof CostCenter>('code');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  // tree–view state
-  const [expandedParents, setExpandedParents] = useState<string[]>([]);
-  const toggleExpand = (id: string) => {
-    setExpandedParents(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
-  };
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
+  const [showPrintMenu, setShowPrintMenu] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CostCenter | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
-  const [showPrintMenu, setShowPrintMenu] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
-  const [sortField, setSortField] = useState<keyof CostCenter>('code');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-
   const [formData, setFormData] = useState({
     code: '',
     nameVi: '',
     nameEn: '',
     nameKo: '',
-    parentObject: '',  // lưu id parent
+    parentObject: '',
     notes: ''
   });
 
-  // filtering & sorting như cũ
-  const filteredAndSortedData = costCenters
+  // ----- Derived data: filter + sort -----
+  const filteredAndSorted = costCenters
     .filter(item =>
       item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.nameVi.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -88,29 +81,26 @@ const CostCenterManagement: React.FC = () => {
       item.nameKo.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
-      const aValue = a[sortField];
-      const bValue = b[sortField];
-      if (sortDirection === 'asc') {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
+      const aVal = a[sortField];
+      const bVal = b[sortField];
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
     });
 
-  const totalPages = Math.ceil(filteredAndSortedData.length / itemsPerPage);
+  // ----- Pagination trên chỉ các parent -----
+  const parentItems = filteredAndSorted.filter(item => !item.parentObject);
+  const totalPages = Math.ceil(parentItems.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = filteredAndSortedData.slice(startIndex, startIndex + itemsPerPage);
+  const endIndex = Math.min(startIndex + itemsPerPage, parentItems.length);
+  const paginatedParents = parentItems.slice(startIndex, endIndex);
 
-  // chỉ hiển thị root hoặc con khi parent được expand
-  const displayedData = paginatedData.filter(item => {
-    if (!item.parentObject) return true;
-    return expandedParents.includes(item.parentObject);
-  });
+  // ----- Các options cho select Parent trong modal -----
+  const parentOptions = costCenters.filter(cc =>
+    !cc.parentObject && cc.id !== editingItem?.id
+  );
 
-  // danh sách select parent chỉ lấy các root hiện có
-  const parentOptions = costCenters.filter(item => !item.parentObject);
-
-  // phần còn lại của logic (thêm, sửa, xóa, bulk, in, xuất Excel) giữ nguyên...
+  // ----- HANDLERS -----
   const handleSort = (field: keyof CostCenter) => {
     if (sortField === field) {
       setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
@@ -120,9 +110,79 @@ const CostCenterManagement: React.FC = () => {
     }
   };
 
-  const handleAdd = () => {
+  const toggleRow = (id: string) => {
+    setExpandedRows(r =>
+      r.includes(id) ? r.filter(x => x !== id) : [...r, id]
+    );
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      // chọn tất cả parent + nếu expand thì cả child
+      const allIds = paginatedParents.reduce<string[]>((acc, p) => {
+        acc.push(p.id);
+        if (expandedRows.includes(p.id)) {
+          const childIds = filteredAndSorted
+            .filter(c => c.parentObject === p.id)
+            .map(c => c.id);
+          acc.push(...childIds);
+        }
+        return acc;
+      }, []);
+      setSelectedItems(Array.from(new Set(allIds)));
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
+  const handleSelectItem = (id: string, checked: boolean) => {
+    if (checked) setSelectedItems(prev => [...prev, id]);
+    else setSelectedItems(prev => prev.filter(x => x !== id));
+  };
+
+  const handleDelete = (id: string) => {
+    if (!window.confirm('Bạn có chắc muốn xóa mục này không?')) return;
+    setCostCenters(prev =>
+      prev.filter(item => item.id !== id && item.parentObject !== id)
+    );
+    setSelectedItems(prev => prev.filter(x => x !== id));
+    setShowActionMenu(null);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedItems.length === 0) return;
+    if (!window.confirm(`Xóa ${selectedItems.length} mục đã chọn?`)) return;
+    setCostCenters(prev =>
+      prev.filter(item => !selectedItems.includes(item.id))
+    );
+    setSelectedItems([]);
+  };
+
+  const handleExport = () => {
+    const header = ['ID','Code','Tiếng Việt','Tiếng Anh','Tiếng Hàn','Ghi chú','Ngày tạo'];
+    const rows = filteredAndSorted.map(item => [
+      item.id, item.code, item.nameVi, item.nameEn, item.nameKo, item.notes, item.createdDate
+    ]);
+    const csv = [header, ...rows]
+      .map(r => r.map(field => `"${field.replace(/"/g,'""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cost_centers.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handlePrint = (_lang: 'vi' | 'en') => {
+    window.print();
+    setShowPrintMenu(false);
+  };
+
+  const openAddModal = () => {
     setEditingItem(null);
-    setFormData({ code: '', nameVi: '', nameEn: '', nameKo: '', parentObject: '', notes: '' });
+    setFormData({ code:'', nameVi:'', nameEn:'', nameKo:'', parentObject:'', notes:'' });
     setIsModalOpen(true);
   };
 
@@ -140,160 +200,107 @@ const CostCenterManagement: React.FC = () => {
     setShowActionMenu(null);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa đối tượng tập hợp chi phí này?')) {
-      setCostCenters(prev => prev.filter(x => x.id !== id));
-    }
-    setShowActionMenu(null);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingItem) {
+      // Cập nhật
       setCostCenters(prev =>
-        prev.map(x => x.id === editingItem.id ? { ...x, ...formData } : x)
+        prev.map(item =>
+          item.id === editingItem.id
+            ? { ...item, ...formData }
+            : item
+        )
       );
     } else {
+      // Thêm mới
       const newItem: CostCenter = {
         id: Date.now().toString(),
-        ...formData,
-        createdDate: new Date().toISOString().split('T')[0],
+        code: formData.code,
+        nameVi: formData.nameVi,
+        nameEn: formData.nameEn,
+        nameKo: formData.nameKo,
+        parentObject: formData.parentObject,
+        notes: formData.notes,
+        createdDate: new Date().toISOString().slice(0,10),
         status: 'active'
       };
-      setCostCenters(prev => [...prev, newItem]);
+      setCostCenters(prev => [newItem, ...prev]);
     }
     setIsModalOpen(false);
   };
 
-  const handleSelectAll = (checked: boolean) => {
-    setSelectedItems(checked ? paginatedData.map(x => x.id) : []);
-  };
-
-  const handleSelectItem = (id: string, checked: boolean) => {
-    setSelectedItems(prev => checked ? [...prev, id] : prev.filter(x => x !== id));
-  };
-
-  const handleBulkDelete = () => {
-    if (selectedItems.length > 0 &&
-        window.confirm(`Bạn có chắc chắn muốn xóa ${selectedItems.length} mục đã chọn?`)) {
-      setCostCenters(prev => prev.filter(x => !selectedItems.includes(x.id)));
-      setSelectedItems([]);
-    }
-  };
-
-  const handlePrint = (language: 'vi' | 'en' | 'ko') => {
-    const names = { vi: 'Tiếng Việt', en: 'English', ko: '한국어' };
-    alert(`Đang xuất báo cáo bằng ${names[language]}...`);
-    setShowPrintMenu(false);
-  };
-
-  const handleExport = () => alert('Đang xuất dữ liệu ra Excel...');
-
+  // Reset trang khi filter/search thay đổi
   useEffect(() => {
-    const onClickOutside = (e: MouseEvent) => {
-      const t = e.target as Element;
-      if (showPrintMenu && !t.closest('.print-dropdown')) setShowPrintMenu(false);
-      if (showActionMenu && !t.closest('.action-dropdown')) setShowActionMenu(null);
-    };
-    document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
-  }, [showPrintMenu, showActionMenu]);
+    setCurrentPage(1);
+    setSelectedItems([]);
+  }, [searchTerm, sortField, sortDirection]);
 
+  // ----- RENDER -----
   return (
     <div className="p-6 space-y-6">
-      {/* Header & Actions (Giữ nguyên) */}
-      <div className=" block sm:flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Đối tượng tập hợp chi phí</h1>
-          <p className="text-gray-600 mt-1">
-            Quản lý các đối tượng tập hợp chi phí trong doanh nghiệp
-          </p>
-        </div>
-        <div className="flex items-center space-x-3">
-          {/* In ấn */}
-          <div className="relative print-dropdown">
+      {/* === Toolbar === */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">Quản lý Đối tượng chi phí</h2>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={openAddModal}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg flex items-center space-x-1 hover:bg-red-700 transition"
+          >
+            <Icons.Plus size={16}/> <span>Thêm mới</span>
+          </button>
+          <button
+            onClick={handleBulkDelete}
+            disabled={selectedItems.length===0}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg flex items-center space-x-1 disabled:opacity-50"
+          >
+            <Icons.Trash2 size={16}/> <span>Xóa</span>
+          </button>
+          <div className="relative">
             <button
-              onClick={() => setShowPrintMenu(v => !v)}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center space-x-2"
+              onClick={()=> setShowPrintMenu(p=>!p)}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg flex items-center space-x-1"
             >
-              <Icons.Printer size={16} /><span>In ấn</span><Icons.ChevronDown size={16} />
+              <Icons.Printer size={16}/> <span>In</span>
             </button>
             {showPrintMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
-                <button onClick={() => handlePrint('vi')}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-3 text-sm border-b border-gray-100 first:rounded-t-lg"
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow border">
+                <button
+                  onClick={()=>handlePrint('vi')}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2"
                 >
-                  <Icons.FileText size={16} className="text-blue-500" /><span>Tiếng Việt</span>
+                  <Icons.FileText size={16} className="text-blue-500"/> <span>Tiếng Việt</span>
                 </button>
-                <button onClick={() => handlePrint('en')}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-3 text-sm border-b border-gray-100"
+                <button
+                  onClick={()=>handlePrint('en')}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2"
                 >
-                  <Icons.FileText size={16} className="text-green-500" /><span>English</span>
-                </button>
-                <button onClick={() => handlePrint('ko')}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-3 text-sm last:rounded-b-lg"
-                >
-                  <Icons.FileText size={16} className="text-purple-500" /><span>한국어</span>
+                  <Icons.FileText size={16} className="text-green-500"/> <span>English</span>
                 </button>
               </div>
             )}
           </div>
-          {/* Xuất Excel */}
-          <button onClick={handleExport}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center space-x-2"
+          <button
+            onClick={handleExport}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg flex items-center space-x-1 hover:bg-gray-300 transition"
           >
-            <Icons.Download size={16} /><span>Xuất Excel</span>
-          </button>
-          {/* Thêm mới */}
-          <button onClick={handleAdd}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
-          >
-            <Icons.Plus size={16} /><span>Thêm mới</span>
+            <Icons.Download size={16}/> <span>Export</span>
           </button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="block sm:flex items-center space-x-0 sm:space-x-4">
-            <div className="relative">
-              <Icons.Search size={16}
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Tìm kiếm theo mã, tên..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-              />
-            </div>
-            {/* (Nếu có filter trạng thái vẫn giữ nguyên) */}
-          </div>
-
-          {selectedItems.length > 0 && (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">
-                Đã chọn {selectedItems.length} mục
-              </span>
-              <button onClick={handleBulkDelete}
-                className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
-              >
-                Xóa đã chọn
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Thống kê (Giữ nguyên) */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {/* ... */}
-        </div>
+      {/* === Search === */}
+      <div>
+        <input
+          type="text"
+          placeholder="Tìm kiếm..."
+          value={searchTerm}
+          onChange={e=>setSearchTerm(e.target.value)}
+          className="w-full md:w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500"
+        />
       </div>
 
-      {/* Data Table */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+      {/* === Table === */}
+      <div className="bg-white rounded-xl shadow border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-red-50 border-b border-red-200">
@@ -301,127 +308,90 @@ const CostCenterManagement: React.FC = () => {
                 <th className="px-4 py-3">
                   <input
                     type="checkbox"
-                    checked={selectedItems.length === paginatedData.length && paginatedData.length > 0}
-                    onChange={e => handleSelectAll(e.target.checked)}
-                    className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                    checked={
+                      selectedItems.length > 0 &&
+                      paginatedParents.every(p => selectedItems.includes(p.id))
+                    }
+                    onChange={e=>handleSelectAll(e.target.checked)}
+                    className="rounded border-gray-300 text-red-600"
                   />
                 </th>
-                <th
-                  className="px-4 py-3 text-left text-sm font-semibold text-red-700 cursor-pointer hover:bg-red-100"
-                  onClick={() => handleSort('code')}
-                >
+                <th onClick={()=>handleSort('code')} className="px-4 py-3 text-left cursor-pointer">
                   <div className="flex items-center space-x-1">
                     <span>Mã đối tượng</span>
-                    {sortField === 'code' &&
-                      (sortDirection === 'asc'
-                        ? <Icons.ChevronUp size={16} />
-                        : <Icons.ChevronDown size={16} />
-                      )
-                    }
+                    {sortField==='code' && (sortDirection==='asc'
+                      ? <Icons.ChevronUp size={16}/>
+                      : <Icons.ChevronDown size={16}/>)}
                   </div>
                 </th>
-                <th
-                  className="px-4 py-3 text-left text-sm font-semibold text-red-700 cursor-pointer hover:bg-red-100"
-                  onClick={() => handleSort('nameVi')}
-                >
+                <th onClick={()=>handleSort('nameVi')} className="px-4 py-3 text-left cursor-pointer">
                   <div className="flex items-center space-x-1">
                     <span>Tiếng Việt</span>
-                    {sortField === 'nameVi' &&
-                      (sortDirection === 'asc'
-                        ? <Icons.ChevronUp size={16} />
-                        : <Icons.ChevronDown size={16} />
-                      )
-                    }
+                    {sortField==='nameVi' && (sortDirection==='asc'
+                      ? <Icons.ChevronUp size={16}/>
+                      : <Icons.ChevronDown size={16}/>)}
                   </div>
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-red-700">Tiếng Anh</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-red-700">Tiếng Hàn</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-red-700">Ghi chú</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-red-700">Thao tác</th>
+                <th className="px-4 py-3 text-left">Tiếng Anh</th>
+                <th className="px-4 py-3 text-left">Tiếng Hàn</th>
+                <th className="px-4 py-3 text-left">Ghi chú</th>
+                <th className="px-4 py-3 text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {displayedData.map(item => {
-                const hasChildren = costCenters.some(c => c.parentObject === item.id);
-                const isParent = item.parentObject === '';
-                const isExpanded = expandedParents.includes(item.id);
-
-                return (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+              {paginatedParents.map(parent => (
+                <Fragment key={parent.id}>
+                  {/* Parent row */}
+                  <tr className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
-                        checked={selectedItems.includes(item.id)}
-                        onChange={e => handleSelectItem(item.id, e.target.checked)}
-                        className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                        checked={selectedItems.includes(parent.id)}
+                        onChange={e=>handleSelectItem(parent.id, e.target.checked)}
+                        className="rounded border-gray-300 text-red-600"
                       />
                     </td>
-                    {/* Code + arrow / indent */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center">
-                        {isParent && hasChildren && (
-                          <button onClick={() => toggleExpand(item.id)} className="mr-2">
-                            {isExpanded
-                              ? <Icons.ChevronDown size={16} />
-                              : <Icons.ChevronRight size={16} />
-                            }
-                          </button>
-                        )}
-                        {!isParent && <span className="ml-6" />}
-                        <span className="font-medium text-gray-900">{item.code}</span>
-                      </div>
-                    </td>
-                    {/* Tiếng Việt */}
-                    <td className="px-4 py-3">
-                      <span className="text-gray-900">{item.nameVi}</span>
-                    </td>
-                    {/* Tiếng Anh */}
-                    <td className="px-4 py-3">
-                      <span className="text-gray-700">{item.nameEn}</span>
-                    </td>
-                    {/* Tiếng Hàn */}
-                    <td className="px-4 py-3">
-                      <span className="text-gray-700">{item.nameKo}</span>
-                    </td>
-                    {/* Ghi chú */}
-                    <td className="px-4 py-3">
-                      <span
-                        className="text-gray-600 text-sm truncate max-w-xs block"
-                        title={item.notes}
-                      >
-                        {item.notes}
-                      </span>
-                    </td>
-                    {/* Actions */}
-                    <td className="px-4 py-3 text-center">
-                      <div className="relative action-dropdown">
+                    <td className="px-4 py-3 flex items-center">
+                      {filteredAndSorted.some(c=>c.parentObject===parent.id) && (
                         <button
-                          onClick={() => setShowActionMenu(m => m === item.id ? null : item.id)}
-                          className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                          onClick={()=>toggleRow(parent.id)}
+                          className="mr-2 p-1 hover:bg-gray-100 rounded"
                         >
-                          <Icons.MoreHorizontal size={16} />
+                          {expandedRows.includes(parent.id)
+                            ? <Icons.ChevronDown size={16}/>
+                            : <Icons.ChevronRight size={16}/>}
                         </button>
-                        {showActionMenu === item.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                      )}
+                      <span className="font-medium">{parent.code}</span>
+                    </td>
+                    <td className="px-4 py-3">{parent.nameVi}</td>
+                    <td className="px-4 py-3">{parent.nameEn}</td>
+                    <td className="px-4 py-3">{parent.nameKo}</td>
+                    <td className="px-4 py-3 truncate max-w-xs" title={parent.notes}>
+                      {parent.notes}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="relative inline-block">
+                        <button
+                          onClick={()=>setShowActionMenu(s=>s===parent.id?null:parent.id)}
+                          className="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                        >
+                          <Icons.MoreHorizontal size={16}/>
+                        </button>
+                        {showActionMenu===parent.id && (
+                          <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow">
                             <button
-                              onClick={() => handleEdit(item)}
-                              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm"
+                              onClick={()=>handleEdit(parent)}
+                              className="w-full px-4 py-2 flex items-center space-x-2 hover:bg-gray-50"
                             >
-                              <Icons.Eye size={16} className="text-blue-500" />
-                              <span>Xem chi tiết</span>
-                            </button>
-                            <button
-                              onClick={() => handleEdit(item)}
-                              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm"
-                            >
-                              <Icons.Edit size={16} className="text-green-500" />
+                              <Icons.Edit size={16} className="text-green-600"/>
                               <span>Chỉnh sửa</span>
                             </button>
                             <button
-                              onClick={() => handleDelete(item.id)}
-                              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm text-red-600"
+                              onClick={()=>handleDelete(parent.id)}
+                              className="w-full px-4 py-2 flex items-center space-x-2 hover:bg-gray-50 text-red-600"
                             >
-                              <Icons.Trash2 size={16} />
+                              <Icons.Trash2 size={16}/>
                               <span>Xóa</span>
                             </button>
                           </div>
@@ -429,34 +399,89 @@ const CostCenterManagement: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                );
-              })}
+                  {/* Child rows */}
+                  {expandedRows.includes(parent.id) && filteredAndSorted
+                    .filter(c=>c.parentObject===parent.id)
+                    .map(child=>(
+                      <tr key={child.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.includes(child.id)}
+                            onChange={e=>handleSelectItem(child.id, e.target.checked)}
+                            className="rounded border-gray-300 text-red-600"
+                          />
+                        </td>
+                        <td className="px-4 py-3 pl-8">{child.code}</td>
+                        <td className="px-4 py-3">{child.nameVi}</td>
+                        <td className="px-4 py-3">{child.nameEn}</td>
+                        <td className="px-4 py-3">{child.nameKo}</td>
+                        <td className="px-4 py-3 truncate max-w-xs" title={child.notes}>
+                          {child.notes}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="relative inline-block">
+                            <button
+                              onClick={()=>setShowActionMenu(s=>s===child.id?null:child.id)}
+                              className="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                            >
+                              <Icons.MoreHorizontal size={16}/>
+                            </button>
+                            {showActionMenu===child.id && (
+                              <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow">
+                                <button
+                                  onClick={()=>handleEdit(child)}
+                                  className="w-full px-4 py-2 flex items-center space-x-2 hover:bg-gray-50"
+                                >
+                                  <Icons.Edit size={16} className="text-green-600"/>
+                                  <span>Chỉnh sửa</span>
+                                </button>
+                                <button
+                                  onClick={()=>handleDelete(child.id)}
+                                  className="w-full px-4 py-2 flex items-center space-x-2 hover:bg-gray-50 text-red-600"
+                                >
+                                  <Icons.Trash2 size={16}/>
+                                  <span>Xóa</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  }
+                </Fragment>
+              ))}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination (Giữ nguyên) */}
-        <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
-          <div className="text-sm text-gray-700">
-            Hiển thị {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredAndSortedData.length)} của {filteredAndSortedData.length} kết quả
-          </div>
-          <div className="flex items-center space-x-2">
-            <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100 disabled:opacity-50"
+        {/* === Pagination === */}
+        <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t">
+          <span className="text-sm text-gray-700">
+            Hiển thị {startIndex+1}–{endIndex} trên {parentItems.length} kết quả
+          </span>
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={()=>setCurrentPage(p=>Math.max(1,p-1))}
+              disabled={currentPage===1}
+              className="px-3 py-1 border rounded disabled:opacity-50"
             >
               Trước
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button key={page} onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded text-sm ${currentPage === page ? 'bg-red-600 text-white' : 'border border-gray-300 hover:bg-gray-100'}`}
+            {Array.from({length: totalPages}, (_, i)=>i+1).map(p=>(
+              <button
+                key={p}
+                onClick={()=>setCurrentPage(p)}
+                className={`px-3 py-1 border rounded ${p===currentPage?'bg-red-600 text-white':''}`}
               >
-                {page}
+                {p}
               </button>
             ))}
-            <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100 disabled:opacity-50"
+            <button
+              onClick={()=>setCurrentPage(p=>Math.min(totalPages,p+1))}
+              disabled={currentPage===totalPages}
+              className="px-3 py-1 border rounded disabled:opacity-50"
             >
               Sau
             </button>
@@ -464,113 +489,91 @@ const CostCenterManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* === Modal Add / Edit === */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">
-                {editingItem ? 'Chỉnh sửa đối tượng tập hợp chi phí' : 'Thêm đối tượng tập hợp chi phí mới'}
-              </h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
-                <Icons.X size={20} className="text-gray-500" />
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div className="flex justify-between items-center border-b px-6 py-3">
+              <h3 className="text-lg font-medium">
+                {editingItem ? 'Chỉnh sửa đối tượng' : 'Thêm mới đối tượng'}
+              </h3>
+              <button onClick={()=>setIsModalOpen(false)}>
+                <Icons.X size={20}/>
               </button>
             </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Mã đối tượng */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Mã đối tượng</label>
+                <input
+                  required
+                  value={formData.code}
+                  onChange={e=>setFormData(f=>({...f,code:e.target.value}))}
+                  className="w-full px-3 py-2 border rounded focus:ring-red-500 focus:border-red-500"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mã đối tượng tập hợp chi phí <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block text-sm font-medium mb-1">Tiếng Việt</label>
                   <input
-                    type="text" required
-                    value={formData.code}
-                    onChange={e => setFormData(d => ({ ...d, code: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                    placeholder="Nhập mã đối tượng"
+                    required
+                    value={formData.nameVi}
+                    onChange={e=>setFormData(f=>({...f,nameVi:e.target.value}))}
+                    className="w-full px-3 py-2 border rounded focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
-                {/* Đối tượng gốc */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Đối tượng gốc
-                  </label>
+                  <label className="block text-sm font-medium mb-1">Tiếng Anh</label>
+                  <input
+                    value={formData.nameEn}
+                    onChange={e=>setFormData(f=>({...f,nameEn:e.target.value}))}
+                    className="w-full px-3 py-2 border rounded focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Tiếng Hàn</label>
+                  <input
+                    value={formData.nameKo}
+                    onChange={e=>setFormData(f=>({...f,nameKo:e.target.value}))}
+                    className="w-full px-3 py-2 border rounded focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Đối tượng gốc</label>
                   <select
                     value={formData.parentObject}
-                    onChange={e => setFormData(d => ({ ...d, parentObject: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    onChange={e=>setFormData(f=>({...f,parentObject:e.target.value}))}
+                    className="w-full px-3 py-2 border rounded focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="">Không có cha</option>
-                    {parentOptions.map(opt => (
+                    {parentOptions.map(opt=>(
                       <option key={opt.id} value={opt.id}>{opt.code}</option>
                     ))}
                   </select>
                 </div>
               </div>
-
-              {/* Tên, Ghi chú (giữ nguyên) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tên tiếng Việt <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text" required
-                  value={formData.nameVi}
-                  onChange={e => setFormData(d => ({ ...d, nameVi: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                  placeholder="Nhập tên tiếng Việt"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tên tiếng Anh
-                </label>
-                <input
-                  type="text"
-                  value={formData.nameEn}
-                  onChange={e => setFormData(d => ({ ...d, nameEn: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                  placeholder="Enter English name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tên tiếng Hàn
-                </label>
-                <input
-                  type="text"
-                  value={formData.nameKo}
-                  onChange={e => setFormData(d => ({ ...d, nameKo: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                  placeholder="한국어 이름을 입력하세요"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ghi chú
-                </label>
+                <label className="block text-sm font-medium mb-1">Ghi chú</label>
                 <textarea
-                  rows={4}
                   value={formData.notes}
-                  onChange={e => setFormData(d => ({ ...d, notes: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none"
-                  placeholder="Nhập ghi chú (tùy chọn)"
+                  onChange={e=>setFormData(f=>({...f,notes:e.target.value}))}
+                  className="w-full px-3 py-2 border rounded focus:ring-red-500 focus:border-red-500"
+                  rows={3}
                 />
               </div>
-
-              {/* Buttons */}
-              <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
-                <button type="button" onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+               
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={()=>setIsModalOpen(false)}
+                  className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
                 >
                   Hủy
                 </button>
-                <button type="submit"
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-red-600 text-white rounded flex items-center space-x-1 hover:bg-red-700"
                 >
-                  <Icons.Save size={16} />
+                  <Icons.Save size={16}/>
                   <span>{editingItem ? 'Cập nhật' : 'Thêm mới'}</span>
                 </button>
               </div>

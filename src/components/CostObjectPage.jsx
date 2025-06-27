@@ -1,20 +1,4 @@
-import React, { useState } from "react";
-import {
-  Button,
-  Toolbar,
-  Item as ToolbarItem,
-} from "devextreme-react/toolbar";
-import DataGrid, {
-  Column,
-  Paging,
-  Pager,
-  SearchPanel,
-  HeaderFilter,
-  FilterRow,
-  Editing,
-} from "devextreme-react/data-grid";
-import { Popup } from "devextreme-react/popup";
-import { SelectBox, TextBox, TagBox, Switch } from "devextreme-react";
+import React, { useState } from 'react';
 
 const initialData = [
   {
@@ -22,7 +6,7 @@ const initialData = [
     type: "Phân xưởng",
     name: "Phân xưởng A",
     description: "Sản xuất linh kiện",
-    account: ["621"],
+    account: "621",
     status: true,
   },
   {
@@ -30,145 +14,157 @@ const initialData = [
     type: "Sản phẩm",
     name: "Sản phẩm B",
     description: "Thành phẩm chính",
-    account: ["622"],
+    account: "622",
     status: true,
   },
 ];
 
-const objectTypes = [
-  "Phân xưởng",
-  "Sản phẩm",
-  "Quy trình sản xuất",
-  "Công đoạn sản xuất",
-];
+const objectTypes = ["Phân xưởng", "Sản phẩm", "Quy trình sản xuất", "Công đoạn sản xuất"];
 
 export default function CostObjectPage() {
   const [data, setData] = useState(initialData);
-  const [popupVisible, setPopupVisible] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [editId, setEditId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [search, setSearch] = useState("");
 
-  const handleAdd = () => {
-    setFormData({});
-    setEditId(null);
-    setPopupVisible(true);
+  const filteredData = data.filter((item) =>
+    item.name.toLowerCase().includes(search.toLowerCase()) ||
+    item.type.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const [form, setForm] = useState({
+    type: "",
+    name: "",
+    description: "",
+    account: "",
+    status: true,
+  });
+
+  const openModal = (item = null) => {
+    setEditing(item);
+    setForm(item || { type: "", name: "", description: "", account: "", status: true });
+    setShowModal(true);
   };
 
-  const handleEdit = (data) => {
-    setFormData(data);
-    setEditId(data.id);
-    setPopupVisible(true);
-  };
-
-  const handleSave = () => {
-    if (editId) {
-      setData((prev) =>
-        prev.map((item) => (item.id === editId ? formData : item))
-      );
+  const save = () => {
+    if (editing) {
+      setData(data.map(d => d.id === editing.id ? { ...editing, ...form } : d));
     } else {
-      const newId = Math.max(...data.map((d) => d.id)) + 1;
-      setData([...data, { ...formData, id: newId }]);
+      setData([...data, { ...form, id: Date.now() }]);
     }
-    setPopupVisible(false);
+    setShowModal(false);
   };
 
-  const handleDelete = (rowData) => {
-    setData(data.filter((item) => item.id !== rowData.id));
+  const remove = (id) => {
+    if (window.confirm("Bạn có chắc chắn muốn xoá?")) {
+      setData(data.filter(d => d.id !== id));
+    }
   };
 
   return (
     <div className="p-4">
-      <Toolbar className="bg-red-600 text-white rounded-t px-4 py-2">
-        <ToolbarItem location="before">
-          <span className="text-lg font-semibold">Đối tượng tập hợp chi phí</span>
-        </ToolbarItem>
-        <ToolbarItem location="after" widget="dxButton" options={{ text: "Thêm mới", icon: "plus", onClick: handleAdd }} />
-        <ToolbarItem location="after" widget="dxButton" options={{ text: "Xuất Excel", icon: "export" }} />
-        <ToolbarItem location="after" widget="dxButton" options={{ text: "Nhập Excel", icon: "upload" }} />
-      </Toolbar>
+      {/* Toolbar */}
+      <div className="flex flex-wrap justify-between items-center bg-red-600 text-white p-3 rounded">
+        <div className="font-bold text-lg">Đối tượng tập hợp chi phí</div>
+        <div className="space-x-2 mt-2 md:mt-0">
+          <button className="bg-white text-red-600 px-3 py-1 rounded" onClick={() => openModal()}>+ Thêm</button>
+          <button className="bg-white text-red-600 px-3 py-1 rounded">Nhập Excel</button>
+          <button className="bg-white text-red-600 px-3 py-1 rounded">Xuất Excel</button>
+        </div>
+      </div>
 
-      <DataGrid
-        className="shadow border"
-        dataSource={data}
-        keyExpr="id"
-        showBorders={true}
-        columnAutoWidth={true}
-        allowColumnResizing={true}
-      >
-        <SearchPanel visible={true} width={300} placeholder="Tìm kiếm tên hoặc loại đối tượng..." />
-        <FilterRow visible={true} />
-        <HeaderFilter visible={true} />
-        <Paging defaultPageSize={5} />
-        <Pager showPageSizeSelector={true} allowedPageSizes={[5, 10, 20]} showInfo={true} />
-
-        <Column dataField="type" caption="Loại đối tượng" />
-        <Column dataField="name" caption="Tên đối tượng" />
-        <Column dataField="description" caption="Mô tả ngắn" />
-        <Column dataField="account" caption="Tài khoản chi phí" calculateCellValue={(row) => row.account.join(", ")} />
-        <Column
-          dataField="status"
-          caption="Trạng thái"
-          cellRender={({ data }) => (data.status ? "Hoạt động" : "Không hoạt động")}
+      {/* Search */}
+      <div className="mt-4">
+        <input
+          type="text"
+          className="w-full md:w-1/3 border px-3 py-2 rounded"
+          placeholder="Tìm kiếm theo tên hoặc loại đối tượng..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
-        <Column
-          caption="Hành động"
-          cellRender={({ data }) => (
-            <div className="space-x-2">
-              <Button text="Sửa" onClick={() => handleEdit(data)} />
-              <Button text="Xóa" onClick={() => handleDelete(data)} />
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto mt-4">
+        <table className="min-w-full border rounded">
+          <thead className="bg-gray-100 text-left">
+            <tr>
+              <th className="p-2 border">Loại đối tượng</th>
+              <th className="p-2 border">Tên</th>
+              <th className="p-2 border">Mô tả</th>
+              <th className="p-2 border">Tài khoản</th>
+              <th className="p-2 border">Trạng thái</th>
+              <th className="p-2 border">Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredData.map((item) => (
+              <tr key={item.id}>
+                <td className="p-2 border">{item.type}</td>
+                <td className="p-2 border">{item.name}</td>
+                <td className="p-2 border">{item.description}</td>
+                <td className="p-2 border">{item.account}</td>
+                <td className="p-2 border">{item.status ? "Hoạt động" : "Không hoạt động"}</td>
+                <td className="p-2 border space-x-2">
+                  <button className="text-blue-600" onClick={() => openModal(item)}>Sửa</button>
+                  <button className="text-red-600" onClick={() => remove(item.id)}>Xoá</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white w-full max-w-lg p-6 rounded shadow">
+            <h2 className="text-lg font-bold mb-4">{editing ? "Sửa" : "Thêm"} đối tượng</h2>
+            <div className="space-y-3">
+              <select
+                className="w-full border p-2 rounded"
+                value={form.type}
+                onChange={(e) => setForm({ ...form, type: e.target.value })}
+              >
+                <option value="">-- Loại đối tượng --</option>
+                {objectTypes.map((type) => (
+                  <option key={type}>{type}</option>
+                ))}
+              </select>
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Tên đối tượng"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+              <textarea
+                className="w-full border p-2 rounded"
+                placeholder="Mô tả chi tiết"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Tài khoản chi phí"
+                value={form.account}
+                onChange={(e) => setForm({ ...form, account: e.target.value })}
+              />
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.checked })}
+                />
+                <span>Hoạt động</span>
+              </label>
             </div>
-          )}
-        />
-      </DataGrid>
-
-      <Popup
-        title={editId ? "Sửa đối tượng" : "Thêm đối tượng"}
-        visible={popupVisible}
-        onHiding={() => setPopupVisible(false)}
-        width={600}
-        showTitle
-      >
-        <div className="space-y-4 p-4">
-          <SelectBox
-            items={objectTypes}
-            value={formData.type}
-            onValueChanged={(e) => setFormData({ ...formData, type: e.value })}
-            placeholder="Loại đối tượng"
-          />
-          <TextBox
-            value={formData.name}
-            placeholder="Tên đối tượng"
-            onValueChanged={(e) => setFormData({ ...formData, name: e.value })}
-          />
-          <TextBox
-            value={formData.description}
-            placeholder="Mô tả"
-            onValueChanged={(e) =>
-              setFormData({ ...formData, description: e.value })
-            }
-          />
-          <TagBox
-            items={["621", "622", "627"]}
-            value={formData.account || []}
-            onValueChanged={(e) =>
-              setFormData({ ...formData, account: e.value })
-            }
-            placeholder="Tài khoản chi phí"
-          />
-          <Switch
-            value={formData.status ?? true}
-            onValueChanged={(e) =>
-              setFormData({ ...formData, status: e.value })
-            }
-            switchedOnText="Hoạt động"
-            switchedOffText="Không hoạt động"
-          />
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button text="Hủy" onClick={() => setPopupVisible(false)} />
-            <Button text="Lưu" type="default" onClick={handleSave} />
+            <div className="mt-4 flex justify-end space-x-2">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 bg-gray-300 rounded">Huỷ</button>
+              <button onClick={save} className="px-4 py-2 bg-red-600 text-white rounded">Lưu</button>
+            </div>
           </div>
         </div>
-      </Popup>
+      )}
     </div>
   );
 }

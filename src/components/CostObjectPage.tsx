@@ -1,5 +1,3 @@
-// CostObjectPage.tsx
-
 import React, { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
 
@@ -19,28 +17,26 @@ interface DoiTuongTapHopChiPhi {
 const CostObjectPage: React.FC = () => {
   // --- State dữ liệu ---
   const [doiTuongList, setDoiTuongList] = useState<DoiTuongTapHopChiPhi[]>([
-    // Ví dụ dữ liệu khởi tạo
     { id: '1', code: 'CC001', nameVi: 'Phòng Sản Xuất', nameEn: 'Production Dept', nameKo: '생산부', parentObject: '', notes: 'Bộ phận sản xuất', createdDate: '2024-01-15', status: 'active' },
     { id: '2', code: 'CC002', nameVi: 'Phòng Marketing',   nameEn: 'Marketing Dept',  nameKo: '마케팅부', parentObject: '1', notes: 'Con của CC001',      createdDate: '2024-01-16', status: 'active' },
     { id: '3', code: 'CC003', nameVi: 'Phòng Kế Toán',     nameEn: 'Accounting Dept', nameKo: '회계부',  parentObject: '', notes: 'Bộ phận kế toán',       createdDate: '2024-01-05', status: 'active' },
   ]);
 
-  // Tree-view: giữ danh sách các parent đang expand
+  // Tree-view: giữ các parent đang expand
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
-  const toggleExpand = (id: string) => {
+  const toggleExpand = (id: string) =>
     setExpandedParents(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
-  };
 
-  // Modal thêm / sửa
+  // Modal thêm/sửa
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DoiTuongTapHopChiPhi | null>(null);
   const [formData, setFormData] = useState({
     code: '', nameVi: '', nameEn: '', nameKo: '', parentObject: '', notes: ''
   });
 
-  // Search, chọn, bulk action, export, print, phân trang
+  // Search, chọn, bulk, export/print, phân trang
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
@@ -48,13 +44,12 @@ const CostObjectPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // --- Xử lý thêm / sửa / xóa ---
+  // --- CRUD Handlers ---
   const handleAdd = () => {
     setEditingItem(null);
     setFormData({ code: '', nameVi: '', nameEn: '', nameKo: '', parentObject: '', notes: '' });
     setIsModalOpen(true);
   };
-
   const handleEdit = (item: DoiTuongTapHopChiPhi) => {
     setEditingItem(item);
     setFormData({
@@ -68,14 +63,12 @@ const CostObjectPage: React.FC = () => {
     setIsModalOpen(true);
     setShowActionMenu(null);
   };
-
   const handleDelete = (id: string) => {
     if (window.confirm('Xóa đối tượng này?')) {
       setDoiTuongList(prev => prev.filter(x => x.id !== id));
     }
     setShowActionMenu(null);
   };
-
   const handleBulkDelete = () => {
     if (selectedItems.length > 0 &&
         window.confirm(`Xóa ${selectedItems.length} mục đã chọn?`)) {
@@ -83,14 +76,11 @@ const CostObjectPage: React.FC = () => {
       setSelectedItems([]);
     }
   };
-
-  // Chọn tất cả / từng mục
   const handleSelectAll = (checked: boolean) =>
     setSelectedItems(checked ? displayed.map(({ item }) => item.id) : []);
   const handleSelectOne = (id: string, checked: boolean) =>
     setSelectedItems(prev => checked ? [...prev, id] : prev.filter(x => x !== id));
 
-  // Lưu form
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingItem) {
@@ -109,7 +99,6 @@ const CostObjectPage: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  // In ấn & Xuất Excel
   const handlePrint = (lang: 'vi' | 'en' | 'ko') => {
     const lbl = { vi: 'Tiếng Việt', en: 'English', ko: '한국어' }[lang];
     alert(`Đang in báo cáo (${lbl})…`);
@@ -136,7 +125,7 @@ const CostObjectPage: React.FC = () => {
     item.nameKo.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // --- Xây dựng cây ---  
+  // --- Xây dựng cây và flatten ---
   const childrenMap: Record<string, DoiTuongTapHopChiPhi[]> = {};
   filtered.forEach(item => {
     if (item.parentObject) {
@@ -146,7 +135,6 @@ const CostObjectPage: React.FC = () => {
   });
   const rootItems = filtered.filter(item => !item.parentObject);
 
-  // Flatten để render tree-view với depth
   interface Flattened { item: DoiTuongTapHopChiPhi; depth: number; }
   const flattenWithDepth = (items: DoiTuongTapHopChiPhi[], depth = 0): Flattened[] =>
     items.reduce<Flattened[]>((acc, item) => {
@@ -157,17 +145,21 @@ const CostObjectPage: React.FC = () => {
       return acc;
     }, []);
 
-  const flattenedItems = flattenWithDepth(rootItems);
-  const totalPages    = Math.ceil(flattenedItems.length / itemsPerPage);
-  const startIndex    = (currentPage - 1) * itemsPerPage;
-  const displayed     = flattenedItems.slice(startIndex, startIndex + itemsPerPage);
+  // **CHÍNH: Khi đang search, hiển thị flat list của filtered; nếu không, hiển thị tree-view**
+  const flattenedItems: Flattened[] = searchTerm
+    ? filtered.map(item => ({ item, depth: 0 }))
+    : flattenWithDepth(rootItems);
 
-  // **CHO SELECT ĐỐI TƯỢNG GỐC: flat toàn bộ list (cha & con)**
+  const totalPages = Math.ceil(flattenedItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const displayed  = flattenedItems.slice(startIndex, startIndex + itemsPerPage);
+
+  // Select Đối tượng gốc: show ALL
   const parentOptions = doiTuongList;
 
   return (
     <div className="p-6 space-y-6">
-      {/* HEADER & ACTIONS */}
+      {/* HEADER & ACTIONS (giống cũ) */}
       <div className="flex flex-col sm:flex-row items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Đối tượng tập hợp chi phí</h1>
@@ -179,8 +171,7 @@ const CostObjectPage: React.FC = () => {
             <button onClick={() => setShowPrintMenu(m => !m)}
               className="inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
             >
-              <Icons.Printer size={16}/>
-              <span>In ấn</span>
+              <Icons.Printer size={16}/> <span>In ấn</span>
             </button>
             {showPrintMenu && (
               <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border z-10">
@@ -202,7 +193,7 @@ const CostObjectPage: React.FC = () => {
               </div>
             )}
           </div>
-          {/* Xuất Excel */}
+          {/* Export Excel */}
           <button onClick={handleExport}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-green-700"
           >
@@ -362,7 +353,7 @@ const CostObjectPage: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL THÊM/SỬA */}
+      {/* MODAL THÊM/SỬA (giống cũ) */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -375,8 +366,8 @@ const CostObjectPage: React.FC = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* Mã & Đối tượng gốc */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Mã đối tượng */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Mã đối tượng <span className="text-red-500">*</span>
@@ -389,7 +380,6 @@ const CostObjectPage: React.FC = () => {
                     placeholder="Nhập mã đối tượng"
                   />
                 </div>
-                {/* Đối tượng gốc: show ALL */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Đối tượng gốc
@@ -408,8 +398,7 @@ const CostObjectPage: React.FC = () => {
                   </select>
                 </div>
               </div>
-
-              {/* Các trường tên và ghi chú */}
+              {/* Tên & Ghi chú */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -461,7 +450,6 @@ const CostObjectPage: React.FC = () => {
                   />
                 </div>
               </div>
-
               {/* Buttons */}
               <div className="flex justify-end space-x-4 pt-4 border-t">
                 <button type="button" onClick={() => setIsModalOpen(false)}
@@ -477,7 +465,7 @@ const CostObjectPage: React.FC = () => {
               </div>
             </form>
           </div>
-        </div> 
+        </div>
       )}
     </div>
   );

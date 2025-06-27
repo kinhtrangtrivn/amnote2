@@ -5,6 +5,8 @@ import DashboardOverview from './components/DashboardOverview';
 import ModuleContent from './components/ModuleContent';
 import LoginPage from './components/LoginPage';
 
+import CostObjectPage from './components/CostObjectPage';
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeMenu, setActiveMenu] = useState('dashboard');

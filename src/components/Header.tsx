@@ -163,7 +163,7 @@ export default function Header({ onToggleSidebar, onLogout, onMenuSelect }: Head
             <Menu size={20} className="text-gray-600" />
           </button>
           
-          <div>
+          <div class="hidden sm:flex ">
             <div className="hidden sm:flex items-center space-x-2 text-xs text-gray-500">
               <span>Trang chủ</span>
               <span>/</span>

@@ -288,7 +288,7 @@ const CostCenterManagement: React.FC = () => {
       {/* Filters and Search */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="block sm:flex items-center space-x-0 sm:space-x-4">
+          <div className="block sm:flex items-center space-x-2 sm:space-x-4">
             <div className="relative">
               <Icons.Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input

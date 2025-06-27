@@ -1,3 +1,5 @@
+// CostObjectPage.tsx
+
 import React, { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
 
@@ -145,7 +147,7 @@ const CostObjectPage: React.FC = () => {
       return acc;
     }, []);
 
-  // **CHÍNH: Khi đang search, hiển thị flat list của filtered; nếu không, hiển thị tree-view**
+  // Khi đang search: hiển thị flat list của filtered; nếu không: hiển thị tree-view
   const flattenedItems: Flattened[] = searchTerm
     ? filtered.map(item => ({ item, depth: 0 }))
     : flattenWithDepth(rootItems);
@@ -154,12 +156,14 @@ const CostObjectPage: React.FC = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const displayed  = flattenedItems.slice(startIndex, startIndex + itemsPerPage);
 
-  // Select Đối tượng gốc: show ALL
-  const parentOptions = doiTuongList;
+  // --- Select Đối tượng gốc: flat toàn bộ list, nhưng ẩn chính item đang edit ---
+  const parentOptions = doiTuongList.filter(opt =>
+    !editingItem || opt.id !== editingItem.id
+  );
 
   return (
     <div className="p-6 space-y-6">
-      {/* HEADER & ACTIONS (giống cũ) */}
+      {/* HEADER & ACTIONS */}
       <div className="flex flex-col sm:flex-row items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Đối tượng tập hợp chi phí</h1>
@@ -193,7 +197,7 @@ const CostObjectPage: React.FC = () => {
               </div>
             )}
           </div>
-          {/* Export Excel */}
+          {/* Xuất Excel */}
           <button onClick={handleExport}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-green-700"
           >
@@ -353,7 +357,7 @@ const CostObjectPage: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL THÊM/SỬA (giống cũ) */}
+      {/* MODAL THÊM/SỬA */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -398,6 +402,7 @@ const CostObjectPage: React.FC = () => {
                   </select>
                 </div>
               </div>
+
               {/* Tên & Ghi chú */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -450,6 +455,7 @@ const CostObjectPage: React.FC = () => {
                   />
                 </div>
               </div>
+
               {/* Buttons */}
               <div className="flex justify-end space-x-4 pt-4 border-t">
                 <button type="button" onClick={() => setIsModalOpen(false)}

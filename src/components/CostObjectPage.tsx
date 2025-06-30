@@ -588,9 +588,13 @@ const CostObjectPage: React.FC = () => {
                       }}
                     >
                       <div
-                        className={`flex items-center justify-center space-x-2 transition-opacity duration-200 ${
-                          isHovered ? 'opacity-100' : 'opacity-0'
-                        }`}
+                        className="
+      flex items-center justify-center space-x-2
+      transition-opacity duration-200
+      opacity-0
+      group-hover:opacity-100
+      group-focus-within:opacity-100
+    "
                       >
                         {/* Sửa */}
                         <div className="relative">

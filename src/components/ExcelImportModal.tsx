@@ -284,8 +284,8 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
                       <div
                         className={`flex-1 h-1 mx-2 ${
                           currentStep > step
-                            ? 'bg-gray-300'  /* thanh hoàn thành */
-                            : 'bg-gray-600'  /* thanh chưa */
+                            ? 'bg-gray-600'  /* thanh hoàn thành */
+                            : 'bg-gray-300'  /* thanh chưa */
                         }`}
                       />
                     )}

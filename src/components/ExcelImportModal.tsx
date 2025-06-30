@@ -708,7 +708,7 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   <ArrowLeft size={16} />
-                  <span>Quay lại</span>
+                  <span class="hidden sm:block">Quay lại</span>
                 </button>
               )}
             </div>
@@ -730,7 +730,7 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
                   }
                   className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  <span>Tiếp tục</span>
+                  <span class="hidden sm:block">Tiếp tục</span>
                   <ArrowRight size={16} />
                 </button>
               ) : (
@@ -740,7 +740,7 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
                   className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Play size={16} />
-                  <span>Thực hiện ({selectedRows.filter(r => validationResults.find(v => v.rowIndex === r)?.isValid).length})</span>
+                  <span class="hidden sm:block">Thực hiện ({selectedRows.filter(r => validationResults.find(v => v.rowIndex === r)?.isValid).length})</span>
                 </button>
               )}
             </div>

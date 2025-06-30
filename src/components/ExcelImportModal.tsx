@@ -281,7 +281,7 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
         {idx < arr.length - 1 && (
           <div
             className={`flex-1 h-1 mx-2 ${
-              currentStep > step ? 'bg-gray-300' : 'bg-gray-600'
+              currentStep > step ? 'bg-gray-300' : 'bg-gray-300'
             }`}
           />
         )}

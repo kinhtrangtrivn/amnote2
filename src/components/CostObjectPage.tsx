@@ -355,11 +355,17 @@ const CostObjectPage: React.FC = () => {
             )}
           </div>
           {/* Xuất Excel */}
-          <button onClick={handleExportExcel}
+          <button  onClick={() => setExcelModalOpen(true)}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-green-700"
           >
             <Icons.Download size={16}/> <span className="hidden sm:block">Nhập Excel</span>
           </button>
+          {/* Popup ExcelImportModal */}
+          <ExcelImportModal
+            isOpen={isExcelModalOpen}
+            onClose={() => setExcelModalOpen(false)}
+            onImport={handleImport}
+          />
           {/* Thêm mới */}
           <button onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-blue-700"

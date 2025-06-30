@@ -638,7 +638,7 @@ const CostObjectPage: React.FC = () => {
               <div className="flex justify-between p-4 border-b ">
                 <h3 className="text-lg font-semibold text-gray-900">
                   Thiết lập bảng dữ liệu
-                  <div class="text-sm text-gray-400 mb-4">Tùy chỉnh hiển thị các cột trong bảng dữ liệu</div>
+                  <div class="text-sm text-gray-400 ">Tùy chỉnh hiển thị các cột trong bảng dữ liệu</div>
                 </h3>
                 <button
                   onClick={() => setShowSettingsPanel(false)}

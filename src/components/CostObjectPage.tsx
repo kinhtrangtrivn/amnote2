@@ -677,7 +677,7 @@ const CostObjectPage: React.FC = () => {
                       
                       {/* Tên hiển thị và Độ rộng cột trên cùng 1 dòng */}
                       <div className="grid grid-cols-5 gap-3">
-                        <div className="col-span-4">
+                        <div className="col-span-3">
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Tên cột hiển thị
                           </label>
@@ -690,7 +690,7 @@ const CostObjectPage: React.FC = () => {
                           />
                         </div>
                         
-                        <div className="col-span-1">
+                        <div className="col-span-2">
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Width
                           </label>

@@ -393,7 +393,7 @@ const CostObjectPage: React.FC = () => {
         {/* TABLE */}
         <div className="overflow-x-auto">
           <table className="min-w-full table-auto">
-            <thead className="bg-gray-50">
+            <thead className="bg-red-50">
               <tr>
                 <th className="px-4 py-3 text-left">
                   <input

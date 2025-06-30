@@ -649,7 +649,7 @@ const CostObjectPage: React.FC = () => {
                 
               </div>
               
-              <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-4">
                   {columnConfigs.map((column) => (
                     <div key={column.id} className="border border-gray-200 rounded-lg p-4 space-y-3">

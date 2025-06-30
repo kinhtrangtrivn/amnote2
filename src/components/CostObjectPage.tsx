@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
- 
+
+import ExcelImportModal from './ExcelImportModal';  
+import { Button } from '@/components/ui/button';
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
   id: string;
@@ -25,6 +27,15 @@ interface ColumnConfig {
   pinned: boolean;
   originalOrder: number; // Thêm để lưu thứ tự ban đầu
 }
+
+ const [isExcelModalOpen, setExcelModalOpen] = useState(false);
+  const [costCenters, setCostCenters] = useState<YourEntityType[]>([]);
+
+  // hàm xử lý khi người dùng import thành công
+  const handleImport = (importedData: any[]) => {
+    // ở đây bạn có thể map dữ liệu vào state hoặc gọi API lưu lên server
+    setCostCenters(prev => [...prev, ...importedData]);
+  };
 
 const CostObjectPage: React.FC = () => {
   // --- State dữ liệu ---

@@ -636,7 +636,10 @@ const CostObjectPage: React.FC = () => {
           <div className="bg-white h-full w-96 shadow-xl settings-panel flex flex-col">
             <div className="flex-1 flex flex-col h-full ">
               <div className="flex justify-between p-6 border-b ">
-                <h3 className="text-lg font-semibold text-gray-900">Thiết lập bảng dữ liệu</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Thiết lập bảng dữ liệu
+                  <div class="text-sm text-gray-600 mb-4">Tùy chỉnh hiển thị các cột trong bảng dữ liệu</div>
+                </h3>
                 <button
                   onClick={() => setShowSettingsPanel(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg"

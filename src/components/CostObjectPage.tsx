@@ -558,7 +558,7 @@ const CostObjectPage: React.FC = () => {
                         {col.dataField === 'code' ? (
                           <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
                             {hasChildren && (
-                              <button onClick={() => toggleExpand(item.id)} className="mr-2">
+                              <button onClick={() => toggleExpand(item.id)} className="ml-[-17px] mr-0">
                                 {isExpanded
                                   ? <Icons.ChevronDown size={16}/>
                                   : <Icons.ChevronRight size={16}/>

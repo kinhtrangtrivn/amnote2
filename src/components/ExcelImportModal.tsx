@@ -741,7 +741,7 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
                   className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Play size={16} />
-                  <span> class="hidden sm:block"Thực hiện ({selectedRows.filter(r => validationResults.find(v => v.rowIndex === r)?.isValid).length})</span>
+                  <span class="hidden sm:block"> Thực hiện ({selectedRows.filter(r => validationResults.find(v => v.rowIndex === r)?.isValid).length})</span>
                 </button>
               )}
             </div>

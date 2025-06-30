@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
-  
+
+import ExcelImportModal from './ExcelImportModal';
+
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
   id: string;
@@ -35,6 +37,26 @@ const CostObjectPage: React.FC = () => {
     { id: '4', code: 'CC004', nameVi: 'Phòng IT',          nameEn: 'IT Dept',         nameKo: 'IT부',   parentObject: '1', notes: 'Con của CC001',       createdDate: '2024-01-17', status: 'active' },
     { id: '5', code: 'CC005', nameVi: 'Team Frontend',     nameEn: 'Frontend Team',   nameKo: '프론트엔드팀', parentObject: '4', notes: 'Con của CC004',       createdDate: '2024-01-18', status: 'active' },
   ]);
+
+  // Modal Excel
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+
+   // Hàm xử lý import từ Excel
+  const handleImportFromExcel = (rows: any[]) => {
+    const items = rows.map((row, idx) => ({
+      id: `${Date.now()}-${idx}`,
+      code: row.code,
+      nameVi: row.nameVi,
+      nameEn: row.nameEn || '',
+      nameKo: row.nameKo || '',
+      parentObject: row.parentObject || '',
+      notes: row.notes || '',
+      createdDate: new Date().toISOString().split('T')[0],
+      status: 'active' as const
+    }));
+    setDoiTuongList(prev => [...prev, ...items]);
+    setIsExcelModalOpen(false);
+  };
 
   // Tree-view: giữ các parent đang expand
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
@@ -355,7 +377,7 @@ const CostObjectPage: React.FC = () => {
             )}
           </div> 
           {/* Xuất Excel */}
-          <button onClick={handleExportExcel}
+          <button onClick={() => setIsExcelModalOpen(true)}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-green-700"
           >
             <Icons.Download size={16}/> <span className="hidden sm:block">Nhập Excel</span>
@@ -761,6 +783,13 @@ const CostObjectPage: React.FC = () => {
         </div>
       )}
 
+ {/* Excel Import Modal */}
+      <ExcelImportModal
+        isOpen={isExcelModalOpen}
+        onClose={() => setIsExcelModalOpen(false)}
+        onImport={handleImportFromExcel}
+      />
+      
       {/* MODAL THÊM/SỬA */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

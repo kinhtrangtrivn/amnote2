@@ -634,21 +634,16 @@ const CostObjectPage: React.FC = () => {
       {showSettingsPanel && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
           <div className="bg-white h-full w-96 shadow-xl settings-panel flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b">
-              <h3 className="text-lg font-semibold text-gray-900">Thiết lập bảng dữ liệu</h3>
-              <button
-                onClick={() => setShowSettingsPanel(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <Icons.X size={20} className="text-gray-500" />
-              </button>
-            </div>
-            
             <div className="flex-1 flex flex-col">
-              <div className="p-6 border-b">
-                <div className="text-sm text-gray-600 mb-4">
-                  Tùy chỉnh hiển thị các cột trong bảng dữ liệu
-                </div>
+              <div className="flex items-center justify-between p-6 border-b">
+                <h3 className="text-lg font-semibold text-gray-900">Thiết lập bảng dữ liệu</h3>
+                <button
+                  onClick={() => setShowSettingsPanel(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  <Icons.X size={20} className="text-gray-500" />
+                </button>
+                <div class="text-sm text-gray-600 mb-4">Tùy chỉnh hiển thị các cột trong bảng dữ liệu</div>
               </div>
               
               <div className="flex-1 overflow-y-auto p-6">

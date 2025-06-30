@@ -267,45 +267,37 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
           </div>
         
           {/* Progress Bar */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-4">
+            <div className="mt-6 w-full">
+              <div className="flex items-center mb-2 w-full">
                 {[1, 2, 3].map((step) => (
-                  <div key={step} className="flex items-center">
+                  <div key={step} className="flex items-center w-full">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                         currentStep >= step
-                          ? 'bg-white text-black'       /* đã hoàn thành: chữ đen */
-                          : 'bg-white/20 text-gray-400' /* chưa: chữ xám nhạt */
+                          ? 'bg-white text-black'
+                          : 'bg-white/20 text-gray-400'
                       }`}
                     >
                       {currentStep > step ? <CheckCircle size={16} /> : step}
                     </div>
                     {step < 3 && (
                       <div
-                        className={`w-16 h-1 mx-2 ${
-                          currentStep > step 
-                            ? 'bg-gray-300'    /* thanh hoàn thành */
-                            : 'bg-gray-300'    /* thanh chưa */
+                        className={`flex-1 h-1 mx-2 ${
+                          currentStep > step
+                            ? 'bg-gray-300'  /* thanh hoàn thành */
+                            : 'bg-gray-600'  /* thanh chưa */
                         }`}
                       />
                     )}
                   </div>
                 ))}
               </div>
+              <div className="flex justify-between text-sm text-gray-500 w-full">
+                <span className={currentStep >= 1 ? 'text-black font-medium' : ''}>Chọn tệp</span>
+                <span className={currentStep >= 2 ? 'text-black font-medium' : ''}>Ghép dữ liệu</span>
+                <span className={currentStep >= 3 ? 'text-black font-medium' : ''}>Kiểm tra</span>
+              </div>
             </div>
-            <div className="flex justify-between text-sm text-gray-500">
-              <span className={currentStep >= 1 ? 'text-black font-medium' : ''}>
-                Chọn tệp
-              </span>
-              <span className={currentStep >= 2 ? 'text-black font-medium' : ''}>
-                Ghép dữ liệu
-              </span>
-              <span className={currentStep >= 3 ? 'text-black font-medium' : ''}>
-                Kiểm tra
-              </span>
-            </div>
-          </div>
         </div>
 
         {/* Content */}

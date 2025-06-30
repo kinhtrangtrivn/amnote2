@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
-
-import ExcelImportModal from './ExcelImportModal';  
-import { Button } from '@/components/ui/button';
+ 
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
   id: string;
@@ -27,15 +25,6 @@ interface ColumnConfig {
   pinned: boolean;
   originalOrder: number; // Thêm để lưu thứ tự ban đầu
 }
-
- const [isExcelModalOpen, setExcelModalOpen] = useState(false);
-  const [costCenters, setCostCenters] = useState<YourEntityType[]>([]);
-
-  // hàm xử lý khi người dùng import thành công
-  const handleImport = (importedData: any[]) => {
-    // ở đây bạn có thể map dữ liệu vào state hoặc gọi API lưu lên server
-    setCostCenters(prev => [...prev, ...importedData]);
-  };
 
 const CostObjectPage: React.FC = () => {
   // --- State dữ liệu ---
@@ -364,19 +353,13 @@ const CostObjectPage: React.FC = () => {
                 </button>
               </div>
             )}
-          </div>
+          </div> 
           {/* Xuất Excel */}
-          <button  onClick={() => setExcelModalOpen(true)}
+          <button onClick={handleExportExcel}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-green-700"
           >
             <Icons.Download size={16}/> <span className="hidden sm:block">Nhập Excel</span>
           </button>
-          {/* Popup ExcelImportModal */}
-          <ExcelImportModal
-            isOpen={isExcelModalOpen}
-            onClose={() => setExcelModalOpen(false)}
-            onImport={handleImport}
-          />
           {/* Thêm mới */}
           <button onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-blue-700"

@@ -526,7 +526,7 @@ const CostObjectPage: React.FC = () => {
                 return (
                   <tr 
                     key={item.id} 
-                    className="  hover:bg-gray-50"
+                    className=" group  hover:bg-gray-50"
                     onMouseEnter={() => setHoveredRowId(item.id)}
                     onMouseLeave={() => setHoveredRowId(null)}
                   >

@@ -473,7 +473,7 @@ const CostObjectPage: React.FC = () => {
             <thead className="bg-red-50">
               <tr>
                 <th 
-                  className="sticky left-0 z-20 bg-red-50 px-2 py-3 text-left"
+                  className="sticky left-0 z-20 bg-red-50 px-4 py-3 text-left"
                   style={{ 
                     width: '20px',
                     minWidth: '20px',
@@ -514,7 +514,7 @@ const CostObjectPage: React.FC = () => {
                   }}
                 >
                   
-                </th>
+                </th> 
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -531,7 +531,7 @@ const CostObjectPage: React.FC = () => {
                     onMouseLeave={() => setHoveredRowId(null)}
                   >
                     <td 
-                      className="sticky left-0 z-15 bg-white px-2 py-3"
+                      className="sticky left-0 z-15 bg-white px-4 py-3"
                       style={{ 
                         width: '20px',
                         minWidth: '20px',

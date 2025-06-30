@@ -275,7 +275,7 @@ const CostObjectPage: React.FC = () => {
           <button onClick={handleExportExcel}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-green-700"
           >
-            <Icons.Download size={16}/> <span className="hidden sm:block">Xuất Excel</span>
+            <Icons.Download size={16}/> <span className="hidden sm:block">Nhập Excel</span>
           </button>
           {/* Thêm mới */}
           <button onClick={handleAdd}

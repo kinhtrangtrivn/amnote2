@@ -692,7 +692,7 @@ const CostObjectPage: React.FC = () => {
                         
                         <div className="col-span-1">
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Độ rộng (px)
+                            Width
                           </label>
                           <input
                             type="number"

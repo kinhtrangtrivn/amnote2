@@ -589,22 +589,17 @@ const CostObjectPage: React.FC = () => {
                       <div className={`flex items-center justify-center space-x-2 transition-opacity duration-200 ${
                         isHovered ? 'opacity-100' : 'opacity-0'
                       }`}>
-                        {/* Edit Button */}
+                        {/* Edit Button */} 
                         <div className="relative group bg-white">
                           <button
                             onClick={() => handleEdit(item)}
-                            className="relative group p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                           >
                             <Icons.Edit size={16} />
-                            <div
-                              className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
-                                         px-2 py-1 bg-gray-800 text-white text-xs rounded
-                                         opacity-0 group-hover:opacity-100 transition-opacity
-                                         pointer-events-none whitespace-nowrap z-30"
-                            >
-                              Sửa
-                            </div>
                           </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+                            Sửa
+                          </div>
                         </div>
                         
                         {/* Delete Button */}

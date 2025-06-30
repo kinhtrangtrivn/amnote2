@@ -644,93 +644,98 @@ const CostObjectPage: React.FC = () => {
               </button>
             </div>
             
-            <div className="p-6 overflow-y-auto h-full">
-              <div className="space-y-4">
+            <div className="flex-1 flex flex-col">
+              <div className="p-6 border-b">
                 <div className="text-sm text-gray-600 mb-4">
                   Tùy chỉnh hiển thị các cột trong bảng dữ liệu
                 </div>
-                
-                {columnConfigs.map((column) => (
-                  <div key={column.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                    {/* Checkbox và tên cột */}
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={column.visible}
-                        onChange={(e) => handleColumnConfigChange(column.id, 'visible', e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">{column.dataField}</div>
-                        <div className="text-sm text-gray-500">Tên cột dữ liệu</div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-4">
+                  {columnConfigs.map((column) => (
+                    <div key={column.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                      {/* Checkbox và tên cột */}
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={column.visible}
+                          onChange={(e) => handleColumnConfigChange(column.id, 'visible', e.target.checked)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{column.dataField}</div>
+                          <div className="text-sm text-gray-500">Tên cột dữ liệu</div>
+                        </div>
+                        {column.pinned && (
+                          <div className="flex items-center text-blue-600">
+                            <Icons.Pin size={14} />
+                            <span className="text-xs ml-1">Đã ghim</span>
+                          </div>
+                        )}
                       </div>
-                      {column.pinned && (
-                        <div className="flex items-center text-blue-600">
-                          <Icons.Pin size={14} />
-                          <span className="text-xs ml-1">Đã ghim</span>
+                      
+                      {/* Tên hiển thị và Độ rộng cột trên cùng 1 dòng */}
+                      <div className="grid grid-cols-5 gap-3">
+                        <div className="col-span-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tên cột hiển thị
+                          </label>
+                          <input
+                            type="text"
+                            value={column.displayName}
+                            onChange={(e) => handleColumnConfigChange(column.id, 'displayName', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={!column.visible}
+                          />
+                        </div>
+                        
+                        <div className="col-span-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Độ rộng (px)
+                          </label>
+                          <input
+                            type="number"
+                            value={column.width}
+                            onChange={(e) => handleColumnConfigChange(column.id, 'width', parseInt(e.target.value) || 100)}
+                            min="50"
+                            max="500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={!column.visible}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Ghim cột */}
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={column.pinned}
+                          onChange={(e) => handleColumnConfigChange(column.id, 'pinned', e.target.checked)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          disabled={!column.visible}
+                        />
+                        <label className="text-sm text-gray-700">
+                          Ghim cột bên trái
+                        </label>
+                      </div>
+                      
+                      {/* Hiển thị vị trí sticky nếu được ghim */}
+                      {column.pinned && column.visible && (
+                        <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                          <div className="text-xs text-blue-700">
+                            <Icons.Info size={12} className="inline mr-1" />
+                            Vị trí sticky: {stickyPositions[column.id]}px từ trái
+                          </div>
                         </div>
                       )}
                     </div>
-                    
-                    {/* Tên hiển thị */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tên cột hiển thị
-                      </label>
-                      <input
-                        type="text"
-                        value={column.displayName}
-                        onChange={(e) => handleColumnConfigChange(column.id, 'displayName', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        disabled={!column.visible}
-                      />
-                    </div>
-                    
-                    {/* Độ rộng cột */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Độ rộng cột (px)
-                      </label>
-                      <input
-                        type="number"
-                        value={column.width}
-                        onChange={(e) => handleColumnConfigChange(column.id, 'width', parseInt(e.target.value) || 100)}
-                        min="50"
-                        max="500"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        disabled={!column.visible}
-                      />
-                    </div>
-                    
-                    {/* Ghim cột */}
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={column.pinned}
-                        onChange={(e) => handleColumnConfigChange(column.id, 'pinned', e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        disabled={!column.visible}
-                      />
-                      <label className="text-sm text-gray-700">
-                        Ghim cột bên trái
-                      </label>
-                    </div>
-                    
-                    {/* Hiển thị vị trí sticky nếu được ghim */}
-                    {column.pinned && column.visible && (
-                      <div className="bg-blue-50 border border-blue-200 rounded p-2">
-                        <div className="text-xs text-blue-700">
-                          <Icons.Info size={12} className="inline mr-1" />
-                          Vị trí sticky: {stickyPositions[column.id]}px từ trái
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
               
-              {/* Action buttons */}
-              <div className="mt-6 pt-6 border-t border-gray-200 flex space-x-3">
+              {/* Action buttons - Fixed at bottom */}
+              <div className="p-6 border-t border-gray-200 flex space-x-3">
                 <button
                   onClick={() => {
                     // Reset to default

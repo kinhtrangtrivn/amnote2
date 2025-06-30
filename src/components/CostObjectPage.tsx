@@ -316,7 +316,7 @@ const CostObjectPage: React.FC = () => {
 
       {/* SEARCH & BULK ACTION */}
       <div className="bg-white rounded-xl shadow border ">
-        <div className="flex items-center justify-between p-6">
+        <div className="block sm:flex items-center justify-between p-6">
           <div className="flex items-center space-x-4">
             <div className="relative">
               <Icons.Search size={16}
@@ -379,7 +379,7 @@ const CostObjectPage: React.FC = () => {
           </div>
 
           {selectedItems.length > 0 && (
-            <div className="flex items-center space-x-4">
+            <div className="flex mt-4 sm:mt-0 items-center space-x-4">
               <span className="text-sm text-gray-600">Đã chọn {selectedItems.length} mục</span>
               <button onClick={handleBulkDelete}
                 className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-red-700"

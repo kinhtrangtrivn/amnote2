@@ -415,10 +415,6 @@ const CostObjectPage: React.FC = () => {
               {displayed.map(({ item, depth }) => {
                 const hasChildren = Boolean(childrenMap[item.id]?.length);
                 const isExpanded  = expandedParents.includes(item.id);
-                // Tính toán margin left: depth * 20px + (nếu có children thì thêm 24px cho icon arrow)
-                const baseMargin = depth * 20;
-                const arrowWidth = 24; // width của icon arrow + margin
-                
                 return (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
@@ -432,47 +428,23 @@ const CostObjectPage: React.FC = () => {
                     {columnConfigs.filter(col => col.visible).map(col => (
                       <td key={col.id} className="px-4 py-3">
                         {col.dataField === 'code' ? (
-                          <div className="flex items-center" style={{ marginLeft: baseMargin }}>
+                          <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
                             {hasChildren && (
-                              <button onClick={() => toggleExpand(item.id)} className="mr-2 flex-shrink-0" style={{ width: '16px' }}>
+                              <button onClick={() => toggleExpand(item.id)} className="mr-2">
                                 {isExpanded
                                   ? <Icons.ChevronDown size={16}/>
                                   : <Icons.ChevronRight size={16}/>
                                 }
                               </button>
                             )}
-                            {/* Nếu không có children nhưng có depth > 0, thêm margin để align với các item có children */}
-                            {!hasChildren && depth > 0 && (
-                              <div style={{ width: '16px', marginRight: '8px' }}></div>
-                            )}
                             <span className={depth > 0 ? 'text-gray-600 italic' : 'font-medium text-gray-900'}>
                               {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
                             </span>
                           </div>
-                        ) : col.dataField === 'nameVi' ? (
-                          <div style={{ marginLeft: hasChildren ? baseMargin : (depth > 0 ? baseMargin + arrowWidth : 0) }}>
-                            <span className={depth > 0 ? 'text-gray-600' : 'text-gray-900'}>
-                              {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
-                            </span>
-                          </div>
-                        ) : col.dataField === 'nameEn' ? (
-                          <div style={{ marginLeft: hasChildren ? baseMargin : (depth > 0 ? baseMargin + arrowWidth : 0) }}>
-                            <span className={depth > 0 ? 'text-gray-600' : 'text-gray-900'}>
-                              {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
-                            </span>
-                          </div>
-                        ) : col.dataField === 'nameKo' ? (
-                          <div style={{ marginLeft: hasChildren ? baseMargin : (depth > 0 ? baseMargin + arrowWidth : 0) }}>
-                            <span className={depth > 0 ? 'text-gray-600' : 'text-gray-900'}>
-                              {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
-                            </span>
-                          </div>
                         ) : col.dataField === 'notes' ? (
-                          <div style={{ marginLeft: hasChildren ? baseMargin : (depth > 0 ? baseMargin + arrowWidth : 0) }}>
-                            <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
-                              {item.notes}
-                            </span>
-                          </div>
+                          <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
+                            {item.notes}
+                          </span>
                         ) : (
                           <span>{item[col.dataField as keyof DoiTuongTapHopChiPhi]}</span>
                         )}

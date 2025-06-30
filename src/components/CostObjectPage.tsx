@@ -175,7 +175,7 @@ const CostObjectPage: React.FC = () => {
             <button onClick={() => setShowPrintMenu(m => !m)}
               className="inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
             >
-              <Icons.Printer size={16}/> <span>In ấn</span>
+              <Icons.Printer size={16}/> <span class="hidden sm:block">In ấn</span>
             </button>
             {showPrintMenu && (
               <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border z-10">
@@ -201,7 +201,7 @@ const CostObjectPage: React.FC = () => {
           <button onClick={handleExport}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-green-700"
           >
-            <Icons.Download size={16}/> <span>Xuất Excel</span>
+            <Icons.Download size={16}/> <span class="hidden sm:block">Xuất Excel</span>
           </button>
           {/* Thêm mới */}
           <button onClick={handleAdd}

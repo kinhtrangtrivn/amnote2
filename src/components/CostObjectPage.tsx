@@ -486,9 +486,9 @@ const CostObjectPage: React.FC = () => {
                 <th 
                   className="sticky right-0 z-20 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-700"
                   style={{ 
-                    width: '100px',
-                    minWidth: '100px',
-                    maxWidth: '100px'
+                    width: '1px',
+                    minWidth: '1px',
+                    maxWidth: '1px'
                   }}
                 >
                   

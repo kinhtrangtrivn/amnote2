@@ -635,7 +635,7 @@ const CostObjectPage: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
           <div className="bg-white h-full w-96 shadow-xl settings-panel flex flex-col">
             <div className="flex-1 flex flex-col h-full ">
-              <div className="flex justify-between p-6 border-b ">
+              <div className="flex justify-between p-2 border-b ">
                 <h3 className="text-lg font-semibold text-gray-900">
                   Thiết lập bảng dữ liệu
                   <div class="text-sm text-gray-400 mb-4">Tùy chỉnh hiển thị các cột trong bảng dữ liệu</div>

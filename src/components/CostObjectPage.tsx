@@ -491,7 +491,7 @@ const CostObjectPage: React.FC = () => {
                     maxWidth: '100px'
                   }}
                 >
-                  Thao tác
+                  
                 </th>
               </tr>
             </thead>
@@ -557,7 +557,7 @@ const CostObjectPage: React.FC = () => {
                       </td>
                     ))}
                     <td 
-                      className="sticky right-0 z-15 bg-white px-4 py-3 text-center"
+                      className="sticky right-0 z-15  px-4 py-3 text-center"
                       style={{ 
                         width: '100px',
                         minWidth: '100px',
@@ -568,7 +568,7 @@ const CostObjectPage: React.FC = () => {
                         isHovered ? 'opacity-100' : 'opacity-0'
                       }`}>
                         {/* Edit Button */}
-                        <div className="relative group">
+                        <div className="relative group bg-white">
                           <button
                             onClick={() => handleEdit(item)}
                             className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
@@ -581,7 +581,7 @@ const CostObjectPage: React.FC = () => {
                         </div>
                         
                         {/* Delete Button */}
-                        <div className="relative group">
+                        <div className="relative group bg-white">
                           <button
                             onClick={() => handleDelete(item.id)}
                             className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

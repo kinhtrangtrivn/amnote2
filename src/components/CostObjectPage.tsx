@@ -473,11 +473,11 @@ const CostObjectPage: React.FC = () => {
             <thead className="bg-red-50">
               <tr>
                 <th 
-                  className="sticky left-0 z-20 bg-red-50 px-4 py-3 text-left"
+                  className="sticky left-0 z-20 bg-red-50 px-2 py-3 text-left"
                   style={{ 
-                    width: '50px',
-                    minWidth: '50px',
-                    maxWidth: '50px'
+                    width: '20px',
+                    minWidth: '20px',
+                    maxWidth: '20px'
                   }}
                 >
                   <input
@@ -531,11 +531,11 @@ const CostObjectPage: React.FC = () => {
                     onMouseLeave={() => setHoveredRowId(null)}
                   >
                     <td 
-                      className="sticky left-0 z-15 bg-white px-4 py-3"
+                      className="sticky left-0 z-15 bg-white px-2 py-3"
                       style={{ 
-                        width: '50px',
-                        minWidth: '50px',
-                        maxWidth: '50px'
+                        width: '20px',
+                        minWidth: '20px',
+                        maxWidth: '20px'
                       }}
                     >
                       <input

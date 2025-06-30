@@ -245,7 +245,7 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gray-200 p-6 text-red-500">
+        <div className="bg-gray-100 p-6 text-black">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-white/20 rounded-lg">
@@ -253,7 +253,7 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
               </div>
               <div>
                 <h2 className="text-xl font-bold">Nhập dữ liệu từ Excel</h2>
-                <p className="text-red-300 text-sm">
+                <p className="text-gray-600 text-sm">
                   Nhập danh sách đối tượng tập hợp chi phí từ file Excel
                 </p>
               </div>
@@ -275,8 +275,8 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                         currentStep >= step
-                          ? 'bg-white text-red-600'
-                          : 'bg-white/20 text-red-200'
+                          ? 'bg-white text-black'       /* đã hoàn thành: chữ đen */
+                          : 'bg-white/20 text-gray-400' /* chưa: chữ xám nhạt */
                       }`}
                     >
                       {currentStep > step ? <CheckCircle size={16} /> : step}
@@ -284,7 +284,9 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
                     {step < 3 && (
                       <div
                         className={`w-16 h-1 mx-2 ${
-                          currentStep > step ? 'bg-white' : 'bg-white/20'
+                          currentStep > step 
+                            ? 'bg-gray-300'    /* thanh hoàn thành */
+                            : 'bg-white/20'    /* thanh chưa */
                         }`}
                       />
                     )}
@@ -292,14 +294,14 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
                 ))}
               </div>
             </div>
-            <div className="flex justify-between text-sm text-red-300">
-              <span className={currentStep >= 1 ? 'text-red-500 font-medium' : ''}>
+            <div className="flex justify-between text-sm text-gray-500">
+              <span className={currentStep >= 1 ? 'text-black font-medium' : ''}>
                 Chọn tệp
               </span>
-              <span className={currentStep >= 2 ? 'text-red-500 font-medium' : ''}>
+              <span className={currentStep >= 2 ? 'text-black font-medium' : ''}>
                 Ghép dữ liệu
               </span>
-              <span className={currentStep >= 3 ? 'text-red-500 font-medium' : ''}>
+              <span className={currentStep >= 3 ? 'text-black font-medium' : ''}>
                 Kiểm tra
               </span>
             </div>

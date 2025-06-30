@@ -16,6 +16,15 @@ interface DoiTuongTapHopChiPhi {
   status: 'active' | 'inactive';
 }
 
+interface ColumnConfig {
+  id: string;
+  dataField: string;
+  displayName: string;
+  width: number;
+  visible: boolean;
+  pinned: boolean;
+}
+
 const CostObjectPage: React.FC = () => {
   // --- State dữ liệu ---
   const [doiTuongList, setDoiTuongList] = useState<DoiTuongTapHopChiPhi[]>([
@@ -45,6 +54,17 @@ const CostObjectPage: React.FC = () => {
   const [showPrintMenu, setShowPrintMenu] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Toolbar states
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>([
+    { id: '1', dataField: 'code', displayName: 'Mã đối tượng', width: 150, visible: true, pinned: false },
+    { id: '2', dataField: 'nameVi', displayName: 'Tiếng Việt', width: 200, visible: true, pinned: false },
+    { id: '3', dataField: 'nameEn', displayName: 'Tiếng Anh', width: 200, visible: true, pinned: false },
+    { id: '4', dataField: 'nameKo', displayName: 'Tiếng Hàn', width: 200, visible: true, pinned: false },
+    { id: '5', dataField: 'notes', displayName: 'Ghi chú', width: 250, visible: true, pinned: false },
+  ]);
 
   // --- CRUD Handlers ---
   const handleAdd = () => {
@@ -106,7 +126,58 @@ const CostObjectPage: React.FC = () => {
     alert(`Đang in báo cáo (${lbl})…`);
     setShowPrintMenu(false);
   };
-  const handleExport = () => alert('Đang xuất Excel…');
+
+  // Toolbar handlers
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      // In real app, you would fetch fresh data here
+      console.log('Dữ liệu đã được làm mới');
+    } catch (error) {
+      console.error('Lỗi khi làm mới dữ liệu:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleExportExcel = () => {
+    // Create CSV content
+    const headers = columnConfigs
+      .filter(col => col.visible)
+      .map(col => col.displayName)
+      .join(',');
+    
+    const rows = displayed.map(({ item }) => {
+      return columnConfigs
+        .filter(col => col.visible)
+        .map(col => {
+          const value = item[col.dataField as keyof DoiTuongTapHopChiPhi] || '';
+          return `"${value}"`;
+        })
+        .join(',');
+    });
+
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'doi-tuong-tap-hop-chi-phi.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleColumnConfigChange = (columnId: string, field: keyof ColumnConfig, value: any) => {
+    setColumnConfigs(prev => 
+      prev.map(col => 
+        col.id === columnId ? { ...col, [field]: value } : col
+      )
+    );
+  };
 
   // Đóng dropdown khi click ngoài
   useEffect(() => {
@@ -114,10 +185,13 @@ const CostObjectPage: React.FC = () => {
       const t = e.target as Element;
       if (showPrintMenu && !t.closest('.print-dropdown')) setShowPrintMenu(false);
       if (showActionMenu && !t.closest('.action-dropdown')) setShowActionMenu(null);
+      if (showSettingsPanel && !t.closest('.settings-panel') && !t.closest('.settings-trigger')) {
+        setShowSettingsPanel(false);
+      }
     };
     document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
-  }, [showPrintMenu, showActionMenu]);
+  }, [showPrintMenu, showActionMenu, showSettingsPanel]);
 
   // --- Lọc theo search ---
   const filtered = doiTuongList.filter(item =>
@@ -162,7 +236,7 @@ const CostObjectPage: React.FC = () => {
   );
 
   return (
-    <div className=" space-y-6">
+    <div className="space-y-6">
       {/* HEADER & ACTIONS */}
       <div className="flex flex-col sm:flex-row items-center justify-between">
         <div>
@@ -175,7 +249,7 @@ const CostObjectPage: React.FC = () => {
             <button onClick={() => setShowPrintMenu(m => !m)}
               className="inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
             >
-              <Icons.Printer size={16}/> <span class="hidden sm:block">In ấn</span>
+              <Icons.Printer size={16}/> <span className="hidden sm:block">In ấn</span>
             </button>
             {showPrintMenu && (
               <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border z-10">
@@ -198,16 +272,16 @@ const CostObjectPage: React.FC = () => {
             )}
           </div>
           {/* Xuất Excel */}
-          <button onClick={handleExport}
+          <button onClick={handleExportExcel}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-green-700"
           >
-            <Icons.Download size={16}/> <span class="hidden sm:block">Xuất Excel</span>
+            <Icons.Download size={16}/> <span className="hidden sm:block">Xuất Excel</span>
           </button>
           {/* Thêm mới */}
           <button onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-blue-700"
           >
-            <Icons.Plus size={16}/> <span>Thêm mới</span>
+            <Icons.Plus size={16}/> <span className="hidden sm:block">Thêm mới</span>
           </button>
         </div>
       </div>
@@ -215,18 +289,67 @@ const CostObjectPage: React.FC = () => {
       {/* SEARCH & BULK ACTION */}
       <div className="bg-white rounded-xl shadow border ">
         <div className="flex items-center justify-between p-6">
-          <div className="relative">
-            <Icons.Search size={16}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            />
-            <input
-              type="text"
-              placeholder="Tìm kiếm mã, tên…"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-            />
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Icons.Search size={16}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Tìm kiếm mã, tên…"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              />
+            </div>
+
+            {/* Toolbar với 3 icon */}
+            <div className="flex items-center bg-gray-50 rounded-lg p-1 space-x-1">
+              {/* Icon Load lại */}
+              <div className="relative group">
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Làm mới dữ liệu"
+                >
+                  <Icons.RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                </button>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                  Làm mới dữ liệu
+                </div>
+              </div>
+
+              {/* Icon Xuất Excel */}
+              <div className="relative group">
+                <button
+                  onClick={handleExportExcel}
+                  className="p-2 text-gray-600 hover:text-green-600 hover:bg-white rounded-md transition-all"
+                  title="Xuất Excel"
+                >
+                  <Icons.FileSpreadsheet size={16} />
+                </button>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                  Xuất Excel
+                </div>
+              </div>
+
+              {/* Icon Thiết lập */}
+              <div className="relative group">
+                <button
+                  onClick={() => setShowSettingsPanel(true)}
+                  className="p-2 text-gray-600 hover:text-purple-600 hover:bg-white rounded-md transition-all settings-trigger"
+                  title="Thiết lập"
+                >
+                  <Icons.Settings size={16} />
+                </button>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                  Thiết lập
+                </div>
+              </div>
+            </div>
           </div>
+
           {selectedItems.length > 0 && (
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Đã chọn {selectedItems.length} mục</span>
@@ -252,11 +375,11 @@ const CostObjectPage: React.FC = () => {
                     className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-red-700">Mã đối tượng</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-red-700">Tiếng Việt</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-red-700">Tiếng Anh</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-red-700">Tiếng Hàn</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-red-700">Ghi chú</th>
+                {columnConfigs.filter(col => col.visible).map(col => (
+                  <th key={col.id} className="px-4 py-3 text-left text-sm font-semibold text-red-700" style={{ width: col.width }}>
+                    {col.displayName}
+                  </th>
+                ))}
                 <th className="px-4 py-3 text-center text-sm font-semibold text-red-700">Thao tác</th>
               </tr>
             </thead>
@@ -274,29 +397,31 @@ const CostObjectPage: React.FC = () => {
                         className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                       />
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
-                        {hasChildren && (
-                          <button onClick={() => toggleExpand(item.id)} className="mr-2">
-                            {isExpanded
-                              ? <Icons.ChevronDown size={16}/>
-                              : <Icons.ChevronRight size={16}/>
-                            }
-                          </button>
+                    {columnConfigs.filter(col => col.visible).map(col => (
+                      <td key={col.id} className="px-4 py-3">
+                        {col.dataField === 'code' ? (
+                          <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
+                            {hasChildren && (
+                              <button onClick={() => toggleExpand(item.id)} className="mr-2">
+                                {isExpanded
+                                  ? <Icons.ChevronDown size={16}/>
+                                  : <Icons.ChevronRight size={16}/>
+                                }
+                              </button>
+                            )}
+                            <span className={depth > 0 ? 'text-gray-600 italic' : 'font-medium text-gray-900'}>
+                              {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
+                            </span>
+                          </div>
+                        ) : col.dataField === 'notes' ? (
+                          <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
+                            {item.notes}
+                          </span>
+                        ) : (
+                          <span>{item[col.dataField as keyof DoiTuongTapHopChiPhi]}</span>
                         )}
-                        <span className={depth > 0 ? 'text-gray-600 italic' : 'font-medium text-gray-900'}>
-                          {item.code}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">{item.nameVi}</td>
-                    <td className="px-4 py-3">{item.nameEn}</td>
-                    <td className="px-4 py-3">{item.nameKo}</td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
-                        {item.notes}
-                      </span>
-                    </td>
+                      </td>
+                    ))}
                     <td className="px-4 py-3 text-center">
                       <div className="relative action-dropdown">
                         <button
@@ -356,6 +481,118 @@ const CostObjectPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* SETTINGS PANEL */}
+      {showSettingsPanel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
+          <div className="bg-white h-full w-96 shadow-xl settings-panel">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Thiết lập bảng dữ liệu</h3>
+              <button
+                onClick={() => setShowSettingsPanel(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <Icons.X size={20} className="text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto h-full">
+              <div className="space-y-4">
+                <div className="text-sm text-gray-600 mb-4">
+                  Tùy chỉnh hiển thị các cột trong bảng dữ liệu
+                </div>
+                
+                {columnConfigs.map((column) => (
+                  <div key={column.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                    {/* Checkbox và tên cột */}
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={column.visible}
+                        onChange={(e) => handleColumnConfigChange(column.id, 'visible', e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{column.dataField}</div>
+                        <div className="text-sm text-gray-500">Tên cột dữ liệu</div>
+                      </div>
+                    </div>
+                    
+                    {/* Tên hiển thị */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tên cột hiển thị
+                      </label>
+                      <input
+                        type="text"
+                        value={column.displayName}
+                        onChange={(e) => handleColumnConfigChange(column.id, 'displayName', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={!column.visible}
+                      />
+                    </div>
+                    
+                    {/* Độ rộng cột */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Độ rộng cột (px)
+                      </label>
+                      <input
+                        type="number"
+                        value={column.width}
+                        onChange={(e) => handleColumnConfigChange(column.id, 'width', parseInt(e.target.value) || 100)}
+                        min="50"
+                        max="500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={!column.visible}
+                      />
+                    </div>
+                    
+                    {/* Ghim cột */}
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={column.pinned}
+                        onChange={(e) => handleColumnConfigChange(column.id, 'pinned', e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={!column.visible}
+                      />
+                      <label className="text-sm text-gray-700">
+                        Ghim cột bên trái
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Action buttons */}
+              <div className="mt-6 pt-6 border-t border-gray-200 flex space-x-3">
+                <button
+                  onClick={() => {
+                    // Reset to default
+                    setColumnConfigs([
+                      { id: '1', dataField: 'code', displayName: 'Mã đối tượng', width: 150, visible: true, pinned: false },
+                      { id: '2', dataField: 'nameVi', displayName: 'Tiếng Việt', width: 200, visible: true, pinned: false },
+                      { id: '3', dataField: 'nameEn', displayName: 'Tiếng Anh', width: 200, visible: true, pinned: false },
+                      { id: '4', dataField: 'nameKo', displayName: 'Tiếng Hàn', width: 200, visible: true, pinned: false },
+                      { id: '5', dataField: 'notes', displayName: 'Ghi chú', width: 250, visible: true, pinned: false },
+                    ]);
+                  }}
+                  className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Đặt lại mặc định
+                </button>
+                <button
+                  onClick={() => setShowSettingsPanel(false)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Áp dụng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL THÊM/SỬA */}
       {isModalOpen && (

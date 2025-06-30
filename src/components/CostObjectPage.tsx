@@ -580,7 +580,7 @@ const CostObjectPage: React.FC = () => {
                     ))}
                     {/* Cột hành động (Edit/Delete) */}
                     <td
-                      className="sticky  hover:bg-white right-0 z-20 px-1 py-3 text-center"
+                      className="sticky  bg-white right-0 z-20 px-1 py-3 text-center"
                       style={{
                         width: '100px',
                         minWidth: '100px',

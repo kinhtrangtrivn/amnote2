@@ -531,7 +531,7 @@ const CostObjectPage: React.FC = () => {
                     onMouseLeave={() => setHoveredRowId(null)}
                   >
                     <td 
-                      className="sticky left-0 z-15 bg-white px-4 py-3"
+                      className="sticky left-0 z-15 bg-white px-4 py-3 hover:bg-gray-50"
                       style={{ 
                         width: '30px',
                         minWidth: '30px',

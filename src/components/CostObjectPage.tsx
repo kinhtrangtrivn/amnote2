@@ -443,8 +443,13 @@ const CostObjectPage: React.FC = () => {
             <thead className="bg-red-50">
               <tr>
                 <th 
-                  className="sticky left-0 z-20 bg-red-50 border-r border-gray-200 w-[50px] px-4 py-3 text-left"
-                  style={{ zIndex: 20 }}
+                  className="sticky left-0 z-20 bg-red-50 px-4 py-3 text-left"
+                  style={{ 
+                    zIndex: 20,
+                    width: '50px',
+                    minWidth: '50px',
+                    maxWidth: '50px'
+                  }}
                 >
                   <input
                     type="checkbox"
@@ -479,8 +484,13 @@ const CostObjectPage: React.FC = () => {
                 return (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td 
-                      className="sticky left-0 z-10 bg-white border-r border-gray-200 w-[50px] px-4 py-3"
-                      style={{ zIndex: 15 }}
+                      className="sticky left-0 z-10 bg-white px-4 py-3"
+                      style={{ 
+                        zIndex: 15,
+                        width: '50px',
+                        minWidth: '50px',
+                        maxWidth: '50px'
+                      }}
                     >
                       <input
                         type="checkbox"

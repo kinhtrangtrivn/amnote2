@@ -31,6 +31,8 @@ const CostObjectPage: React.FC = () => {
     { id: '1', code: 'CC001', nameVi: 'Phòng Sản Xuất', nameEn: 'Production Dept', nameKo: '생산부', parentObject: '', notes: 'Bộ phận sản xuất', createdDate: '2024-01-15', status: 'active' },
     { id: '2', code: 'CC002', nameVi: 'Phòng Marketing',   nameEn: 'Marketing Dept',  nameKo: '마케팅부', parentObject: '1', notes: 'Con của CC001',      createdDate: '2024-01-16', status: 'active' },
     { id: '3', code: 'CC003', nameVi: 'Phòng Kế Toán',     nameEn: 'Accounting Dept', nameKo: '회계부',  parentObject: '', notes: 'Bộ phận kế toán',       createdDate: '2024-01-05', status: 'active' },
+    { id: '4', code: 'CC004', nameVi: 'Phòng IT',          nameEn: 'IT Dept',         nameKo: 'IT부',   parentObject: '1', notes: 'Con của CC001',       createdDate: '2024-01-17', status: 'active' },
+    { id: '5', code: 'CC005', nameVi: 'Team Frontend',     nameEn: 'Frontend Team',   nameKo: '프론트엔드팀', parentObject: '4', notes: 'Con của CC004',       createdDate: '2024-01-18', status: 'active' },
   ]);
 
   // Tree-view: giữ các parent đang expand
@@ -65,6 +67,20 @@ const CostObjectPage: React.FC = () => {
     { id: '4', dataField: 'nameKo', displayName: 'Tiếng Hàn', width: 200, visible: true, pinned: false },
     { id: '5', dataField: 'notes', displayName: 'Ghi chú', width: 250, visible: true, pinned: false },
   ]);
+
+  // Hàm để tìm tất cả các con của một đối tượng (đệ quy)
+  const getAllChildren = (parentId: string, items: DoiTuongTapHopChiPhi[]): string[] => {
+    const children: string[] = [];
+    const directChildren = items.filter(item => item.parentObject === parentId);
+    
+    directChildren.forEach(child => {
+      children.push(child.id);
+      // Đệ quy tìm con của con
+      children.push(...getAllChildren(child.id, items));
+    });
+    
+    return children;
+  };
 
   // --- CRUD Handlers ---
   const handleAdd = () => {
@@ -230,10 +246,22 @@ const CostObjectPage: React.FC = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const displayed  = flattenedItems.slice(startIndex, startIndex + itemsPerPage);
 
-  // --- Select Đối tượng gốc: flat toàn bộ list, nhưng ẩn chính item đang edit ---
-  const parentOptions = doiTuongList.filter(opt =>
-    !editingItem || opt.id !== editingItem.id
-  );
+  // --- Select Đối tượng gốc: ẩn chính item đang edit và tất cả con của nó ---
+  const getValidParentOptions = () => {
+    if (!editingItem) {
+      // Khi thêm mới, hiển thị tất cả
+      return doiTuongList;
+    }
+
+    // Khi chỉnh sửa, tìm tất cả các con của item hiện tại
+    const childrenIds = getAllChildren(editingItem.id, doiTuongList);
+    const excludedIds = [editingItem.id, ...childrenIds];
+
+    // Lọc ra những đối tượng không nằm trong danh sách loại trừ
+    return doiTuongList.filter(opt => !excludedIds.includes(opt.id));
+  };
+
+  const parentOptions = getValidParentOptions();
 
   return (
     <div className="space-y-6">
@@ -624,6 +652,11 @@ const CostObjectPage: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Đối tượng gốc
+                    {editingItem && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        (Ẩn đối tượng hiện tại và các con)
+                      </span>
+                    )}
                   </label>
                   <select
                     value={formData.parentObject}
@@ -637,6 +670,12 @@ const CostObjectPage: React.FC = () => {
                       </option>
                     ))}
                   </select>
+                  {editingItem && parentOptions.length < doiTuongList.length - 1 && (
+                    <div className="mt-1 text-xs text-amber-600 flex items-center">
+                      <Icons.Info size={12} className="mr-1" />
+                      Một số tùy chọn bị ẩn để tránh vòng lặp phân cấp
+                    </div>
+                  )}
                 </div>
               </div>
 

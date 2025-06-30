@@ -559,9 +559,9 @@ const CostObjectPage: React.FC = () => {
                     <td 
                       className="sticky right-0 z-15  px-4 py-3 text-center"
                       style={{ 
-                        width: '1px',
-                        minWidth: '1px',
-                        maxWidth: '1px'
+                        width: '100px',
+                        minWidth: '100px',
+                        maxWidth: '100px'
                       }}
                     >
                       <div className={`flex items-center justify-center space-x-2 transition-opacity duration-200 ${

@@ -82,6 +82,53 @@ const CostObjectPage: React.FC = () => {
     return children;
   };
 
+  // Tính toán vị trí sticky cho các cột
+  const calculateStickyPositions = () => {
+    const visibleColumns = columnConfigs.filter(col => col.visible);
+    const pinnedColumns = visibleColumns.filter(col => col.pinned);
+    const positions: { [key: string]: number } = {};
+    
+    // Checkbox column luôn ở vị trí 0
+    const checkboxWidth = 50;
+    let currentLeft = checkboxWidth;
+    
+    // Tính toán vị trí cho các cột pinned theo thứ tự
+    pinnedColumns.forEach((col) => {
+      positions[col.id] = currentLeft;
+      currentLeft += col.width;
+    });
+    
+    return positions;
+  };
+
+  const stickyPositions = calculateStickyPositions();
+
+  // Hàm để lấy style cho cột
+  const getColumnStyle = (column: ColumnConfig) => {
+    if (!column.pinned) return {};
+    
+    return {
+      position: 'sticky' as const,
+      left: stickyPositions[column.id],
+      zIndex: 10,
+      backgroundColor: 'white',
+      borderRight: '1px solid #e5e7eb'
+    };
+  };
+
+  // Hàm để lấy style cho header cột
+  const getHeaderColumnStyle = (column: ColumnConfig) => {
+    if (!column.pinned) return {};
+    
+    return {
+      position: 'sticky' as const,
+      left: stickyPositions[column.id],
+      zIndex: 11,
+      backgroundColor: '#fef2f2', // bg-red-50
+      borderRight: '1px solid #e5e7eb'
+    };
+  };
+
   // --- CRUD Handlers ---
   const handleAdd = () => {
     setEditingItem(null);
@@ -395,7 +442,10 @@ const CostObjectPage: React.FC = () => {
           <table className="min-w-full table-auto">
             <thead className="bg-red-50">
               <tr>
-                <th className="sticky left-0 z-10 bg-red-50 border-r border-gray-200 w-[50px] px-4 py-3 text-left">
+                <th 
+                  className="sticky left-0 z-20 bg-red-50 border-r border-gray-200 w-[50px] px-4 py-3 text-left"
+                  style={{ zIndex: 20 }}
+                >
                   <input
                     type="checkbox"
                     checked={selectedItems.length === displayed.length && displayed.length > 0}
@@ -404,8 +454,19 @@ const CostObjectPage: React.FC = () => {
                   />
                 </th>
                 {columnConfigs.filter(col => col.visible).map(col => (
-                  <th key={col.id} className="px-4 py-3 text-left text-sm font-semibold text-red-700" style={{ width: col.width }}>
+                  <th 
+                    key={col.id} 
+                    className="px-4 py-3 text-left text-sm font-semibold text-red-700" 
+                    style={{
+                      width: col.width,
+                      minWidth: col.width,
+                      ...getHeaderColumnStyle(col)
+                    }}
+                  >
                     {col.displayName}
+                    {col.pinned && (
+                      <Icons.Pin size={12} className="inline-block ml-1 text-red-500" />
+                    )}
                   </th>
                 ))}
                 <th className="px-4 py-3 text-center text-sm font-semibold text-red-700">Thao tác</th>
@@ -417,7 +478,10 @@ const CostObjectPage: React.FC = () => {
                 const isExpanded  = expandedParents.includes(item.id);
                 return (
                   <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="sticky left-0 z-10 bg-white border-r border-gray-200 w-[50px] px-4 py-3">
+                    <td 
+                      className="sticky left-0 z-10 bg-white border-r border-gray-200 w-[50px] px-4 py-3"
+                      style={{ zIndex: 15 }}
+                    >
                       <input
                         type="checkbox"
                         checked={selectedItems.includes(item.id)}
@@ -426,7 +490,15 @@ const CostObjectPage: React.FC = () => {
                       />
                     </td>
                     {columnConfigs.filter(col => col.visible).map(col => (
-                      <td key={col.id} className="px-4 py-3">
+                      <td 
+                        key={col.id} 
+                        className="px-4 py-3"
+                        style={{
+                          width: col.width,
+                          minWidth: col.width,
+                          ...getColumnStyle(col)
+                        }}
+                      >
                         {col.dataField === 'code' ? (
                           <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
                             {hasChildren && (
@@ -544,6 +616,12 @@ const CostObjectPage: React.FC = () => {
                         <div className="font-medium text-gray-900">{column.dataField}</div>
                         <div className="text-sm text-gray-500">Tên cột dữ liệu</div>
                       </div>
+                      {column.pinned && (
+                        <div className="flex items-center text-blue-600">
+                          <Icons.Pin size={14} />
+                          <span className="text-xs ml-1">Đã ghim</span>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Tên hiển thị */}
@@ -589,6 +667,16 @@ const CostObjectPage: React.FC = () => {
                         Ghim cột bên trái
                       </label>
                     </div>
+                    
+                    {/* Hiển thị vị trí sticky nếu được ghim */}
+                    {column.pinned && column.visible && (
+                      <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                        <div className="text-xs text-blue-700">
+                          <Icons.Info size={12} className="inline mr-1" />
+                          Vị trí sticky: {stickyPositions[column.id]}px từ trái
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

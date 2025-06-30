@@ -395,7 +395,7 @@ const CostObjectPage: React.FC = () => {
           <table className="min-w-full table-auto">
             <thead className="bg-red-50">
               <tr>
-                <th className="px-4 py-3 text-left">
+                <th className="sticky left-0 z-10 bg-red-50 border-r border-gray-200 w-[50px] px-4 py-3 text-left">
                   <input
                     type="checkbox"
                     checked={selectedItems.length === displayed.length && displayed.length > 0}
@@ -417,7 +417,7 @@ const CostObjectPage: React.FC = () => {
                 const isExpanded  = expandedParents.includes(item.id);
                 return (
                   <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
+                    <td className="sticky left-0 z-10 bg-white border-r border-gray-200 w-[50px] px-4 py-3">
                       <input
                         type="checkbox"
                         checked={selectedItems.includes(item.id)}

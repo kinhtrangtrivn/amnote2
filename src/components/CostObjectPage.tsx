@@ -596,7 +596,7 @@ const CostObjectPage: React.FC = () => {
                         <div className="relative">
                           <button
                             onClick={() => handleEdit(item)}
-                            className="peer p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            className="peer p-1.5 text-green-600 bg-white hover:bg-green-50 rounded-lg transition-colors"
                           >
                             <Icons.Edit size={16} />
                           </button>
@@ -614,7 +614,7 @@ const CostObjectPage: React.FC = () => {
                         <div className="relative">
                           <button
                             onClick={() => handleDelete(item.id)}
-                            className="peer p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="peer p-1.5 text-red-600 bg-white hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <Icons.Trash2 size={16} />
                           </button>

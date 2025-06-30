@@ -23,6 +23,7 @@ interface ColumnConfig {
   width: number;
   visible: boolean;
   pinned: boolean;
+  originalOrder: number; // Thêm để lưu thứ tự ban đầu
 }
 
 const CostObjectPage: React.FC = () => {
@@ -61,31 +62,26 @@ const CostObjectPage: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>([
-    { id: '1', dataField: 'code', displayName: 'Mã đối tượng', width: 150, visible: true, pinned: false },
-    { id: '2', dataField: 'nameVi', displayName: 'Tiếng Việt', width: 200, visible: true, pinned: false },
-    { id: '3', dataField: 'nameEn', displayName: 'Tiếng Anh', width: 200, visible: true, pinned: false },
-    { id: '4', dataField: 'nameKo', displayName: 'Tiếng Hàn', width: 200, visible: true, pinned: false },
-    { id: '5', dataField: 'notes', displayName: 'Ghi chú', width: 250, visible: true, pinned: false },
+    { id: '1', dataField: 'code', displayName: 'Mã đối tượng', width: 150, visible: true, pinned: false, originalOrder: 0 },
+    { id: '2', dataField: 'nameVi', displayName: 'Tiếng Việt', width: 200, visible: true, pinned: false, originalOrder: 1 },
+    { id: '3', dataField: 'nameEn', displayName: 'Tiếng Anh', width: 200, visible: true, pinned: false, originalOrder: 2 },
+    { id: '4', dataField: 'nameKo', displayName: 'Tiếng Hàn', width: 200, visible: true, pinned: false, originalOrder: 3 },
+    { id: '5', dataField: 'notes', displayName: 'Ghi chú', width: 250, visible: true, pinned: false, originalOrder: 4 },
   ]);
 
-  // Hàm để tìm tất cả các con của một đối tượng (đệ quy)
-  const getAllChildren = (parentId: string, items: DoiTuongTapHopChiPhi[]): string[] => {
-    const children: string[] = [];
-    const directChildren = items.filter(item => item.parentObject === parentId);
+  // Hàm để sắp xếp cột: pinned columns trước, sau đó là unpinned columns theo thứ tự ban đầu
+  const getOrderedColumns = () => {
+    const visibleColumns = columnConfigs.filter(col => col.visible);
+    const pinnedColumns = visibleColumns.filter(col => col.pinned).sort((a, b) => a.originalOrder - b.originalOrder);
+    const unpinnedColumns = visibleColumns.filter(col => !col.pinned).sort((a, b) => a.originalOrder - b.originalOrder);
     
-    directChildren.forEach(child => {
-      children.push(child.id);
-      // Đệ quy tìm con của con
-      children.push(...getAllChildren(child.id, items));
-    });
-    
-    return children;
+    return [...pinnedColumns, ...unpinnedColumns];
   };
 
   // Tính toán vị trí sticky cho các cột
   const calculateStickyPositions = () => {
-    const visibleColumns = columnConfigs.filter(col => col.visible);
-    const pinnedColumns = visibleColumns.filter(col => col.pinned);
+    const orderedColumns = getOrderedColumns();
+    const pinnedColumns = orderedColumns.filter(col => col.pinned);
     const positions: { [key: string]: number } = {};
     
     // Checkbox column luôn ở vị trí 0
@@ -111,8 +107,7 @@ const CostObjectPage: React.FC = () => {
       position: 'sticky' as const,
       left: stickyPositions[column.id],
       zIndex: 10,
-      backgroundColor: 'white',
-      borderRight: '1px solid #e5e7eb'
+      backgroundColor: 'white'
     };
   };
 
@@ -124,9 +119,22 @@ const CostObjectPage: React.FC = () => {
       position: 'sticky' as const,
       left: stickyPositions[column.id],
       zIndex: 11,
-      backgroundColor: '#fef2f2', // bg-red-50
-      borderRight: '1px solid #e5e7eb'
+      backgroundColor: '#fef2f2' // bg-red-50
     };
+  };
+
+  // Hàm để tìm tất cả các con của một đối tượng (đệ quy)
+  const getAllChildren = (parentId: string, items: DoiTuongTapHopChiPhi[]): string[] => {
+    const children: string[] = [];
+    const directChildren = items.filter(item => item.parentObject === parentId);
+    
+    directChildren.forEach(child => {
+      children.push(child.id);
+      // Đệ quy tìm con của con
+      children.push(...getAllChildren(child.id, items));
+    });
+    
+    return children;
   };
 
   // --- CRUD Handlers ---
@@ -207,14 +215,11 @@ const CostObjectPage: React.FC = () => {
 
   const handleExportExcel = () => {
     // Create CSV content
-    const headers = columnConfigs
-      .filter(col => col.visible)
-      .map(col => col.displayName)
-      .join(',');
+    const orderedColumns = getOrderedColumns();
+    const headers = orderedColumns.map(col => col.displayName).join(',');
     
     const rows = displayed.map(({ item }) => {
-      return columnConfigs
-        .filter(col => col.visible)
+      return orderedColumns
         .map(col => {
           const value = item[col.dataField as keyof DoiTuongTapHopChiPhi] || '';
           return `"${value}"`;
@@ -445,7 +450,6 @@ const CostObjectPage: React.FC = () => {
                 <th 
                   className="sticky left-0 z-20 bg-red-50 px-4 py-3 text-left"
                   style={{ 
-                    zIndex: 20,
                     width: '50px',
                     minWidth: '50px',
                     maxWidth: '50px'
@@ -458,7 +462,7 @@ const CostObjectPage: React.FC = () => {
                     className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                   />
                 </th>
-                {columnConfigs.filter(col => col.visible).map(col => (
+                {getOrderedColumns().map(col => (
                   <th 
                     key={col.id} 
                     className="px-4 py-3 text-left text-sm font-semibold text-red-700" 
@@ -468,10 +472,12 @@ const CostObjectPage: React.FC = () => {
                       ...getHeaderColumnStyle(col)
                     }}
                   >
-                    {col.displayName}
-                    {col.pinned && (
-                      <Icons.Pin size={12} className="inline-block ml-1 text-red-500" />
-                    )}
+                    <div className="flex items-center">
+                      {col.displayName}
+                      {col.pinned && (
+                        <Icons.Pin size={12} className="ml-1 text-red-500" />
+                      )}
+                    </div>
                   </th>
                 ))}
                 <th className="px-4 py-3 text-center text-sm font-semibold text-red-700">Thao tác</th>
@@ -484,9 +490,8 @@ const CostObjectPage: React.FC = () => {
                 return (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td 
-                      className="sticky left-0 z-10 bg-white px-4 py-3"
+                      className="sticky left-0 z-15 bg-white px-4 py-3"
                       style={{ 
-                        zIndex: 15,
                         width: '50px',
                         minWidth: '50px',
                         maxWidth: '50px'
@@ -499,7 +504,7 @@ const CostObjectPage: React.FC = () => {
                         className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                       />
                     </td>
-                    {columnConfigs.filter(col => col.visible).map(col => (
+                    {getOrderedColumns().map(col => (
                       <td 
                         key={col.id} 
                         className="px-4 py-3"
@@ -697,11 +702,11 @@ const CostObjectPage: React.FC = () => {
                   onClick={() => {
                     // Reset to default
                     setColumnConfigs([
-                      { id: '1', dataField: 'code', displayName: 'Mã đối tượng', width: 150, visible: true, pinned: false },
-                      { id: '2', dataField: 'nameVi', displayName: 'Tiếng Việt', width: 200, visible: true, pinned: false },
-                      { id: '3', dataField: 'nameEn', displayName: 'Tiếng Anh', width: 200, visible: true, pinned: false },
-                      { id: '4', dataField: 'nameKo', displayName: 'Tiếng Hàn', width: 200, visible: true, pinned: false },
-                      { id: '5', dataField: 'notes', displayName: 'Ghi chú', width: 250, visible: true, pinned: false },
+                      { id: '1', dataField: 'code', displayName: 'Mã đối tượng', width: 150, visible: true, pinned: false, originalOrder: 0 },
+                      { id: '2', dataField: 'nameVi', displayName: 'Tiếng Việt', width: 200, visible: true, pinned: false, originalOrder: 1 },
+                      { id: '3', dataField: 'nameEn', displayName: 'Tiếng Anh', width: 200, visible: true, pinned: false, originalOrder: 2 },
+                      { id: '4', dataField: 'nameKo', displayName: 'Tiếng Hàn', width: 200, visible: true, pinned: false, originalOrder: 3 },
+                      { id: '5', dataField: 'notes', displayName: 'Ghi chú', width: 250, visible: true, pinned: false, originalOrder: 4 },
                     ]);
                   }}
                   className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"

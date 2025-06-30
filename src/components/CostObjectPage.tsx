@@ -475,9 +475,9 @@ const CostObjectPage: React.FC = () => {
                 <th 
                   className="sticky left-0 z-20 bg-red-50 px-4 py-3 text-left"
                   style={{ 
-                    width: '20px',
-                    minWidth: '20px',
-                    maxWidth: '20px'
+                    width: '30px',
+                    minWidth: '30px',
+                    maxWidth: '30px'
                   }}
                 >
                   <input
@@ -533,9 +533,9 @@ const CostObjectPage: React.FC = () => {
                     <td 
                       className="sticky left-0 z-15 bg-white px-4 py-3"
                       style={{ 
-                        width: '20px',
-                        minWidth: '20px',
-                        maxWidth: '20px'
+                        width: '30px',
+                        minWidth: '30px',
+                        maxWidth: '30px'
                       }}
                     >
                       <input

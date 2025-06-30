@@ -58,6 +58,9 @@ const CostObjectPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Hover state for rows
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+
   // Toolbar states
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
@@ -480,15 +483,31 @@ const CostObjectPage: React.FC = () => {
                     </div>
                   </th>
                 ))}
-                <th className="px-4 py-3 text-center text-sm font-semibold text-red-700">Thao tác</th>
+                <th 
+                  className="sticky right-0 z-20 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-700"
+                  style={{ 
+                    width: '100px',
+                    minWidth: '100px',
+                    maxWidth: '100px'
+                  }}
+                >
+                  Thao tác
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {displayed.map(({ item, depth }) => {
                 const hasChildren = Boolean(childrenMap[item.id]?.length);
                 const isExpanded  = expandedParents.includes(item.id);
+                const isHovered = hoveredRowId === item.id;
+                
                 return (
-                  <tr key={item.id} className="hover:bg-gray-50">
+                  <tr 
+                    key={item.id} 
+                    className="hover:bg-gray-50"
+                    onMouseEnter={() => setHoveredRowId(item.id)}
+                    onMouseLeave={() => setHoveredRowId(null)}
+                  >
                     <td 
                       className="sticky left-0 z-15 bg-white px-4 py-3"
                       style={{ 
@@ -537,28 +556,42 @@ const CostObjectPage: React.FC = () => {
                         )}
                       </td>
                     ))}
-                    <td className="px-4 py-3 text-center">
-                      <div className="relative action-dropdown">
-                        <button
-                          onClick={() => setShowActionMenu(m => m === item.id ? null : item.id)}
-                          className="inline-flex items-center text-gray-700 bg-gray-100 px-2 py-1 rounded-lg hover:bg-gray-200"
-                        >
-                          <Icons.MoreHorizontal size={16}/>
-                        </button>
-                        {showActionMenu === item.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-10">
-                            <button onClick={() => handleEdit(item)}
-                              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm"
-                            >
-                              <Icons.Edit size={16} className="text-green-500"/> <span>Chỉnh sửa</span>
-                            </button>
-                            <button onClick={() => handleDelete(item.id)}
-                              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm text-red-600"
-                            >
-                              <Icons.Trash2 size={16}/> <span>Xóa</span>
-                            </button>
+                    <td 
+                      className="sticky right-0 z-15 bg-white px-4 py-3 text-center"
+                      style={{ 
+                        width: '100px',
+                        minWidth: '100px',
+                        maxWidth: '100px'
+                      }}
+                    >
+                      <div className={`flex items-center justify-center space-x-2 transition-opacity duration-200 ${
+                        isHovered ? 'opacity-100' : 'opacity-0'
+                      }`}>
+                        {/* Edit Button */}
+                        <div className="relative group">
+                          <button
+                            onClick={() => handleEdit(item)}
+                            className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          >
+                            <Icons.Edit size={16} />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+                            Sửa
                           </div>
-                        )}
+                        </div>
+                        
+                        {/* Delete Button */}
+                        <div className="relative group">
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Icons.Trash2 size={16} />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+                            Xóa
+                          </div>
+                        </div>
                       </div>
                     </td>
                   </tr>

@@ -526,12 +526,12 @@ const CostObjectPage: React.FC = () => {
                 return (
                   <tr 
                     key={item.id} 
-                    className="hover:bg-gray-50"
+                    className="group  hover:bg-gray-50"
                     onMouseEnter={() => setHoveredRowId(item.id)}
                     onMouseLeave={() => setHoveredRowId(null)}
                   >
                     <td 
-                      className="sticky left-0 z-15 bg-white px-4 py-3 hover:bg-gray-50"
+                      className="sticky left-0 z-15 bg-white px-4 py-3 group-hover:bg-gray-50"
                       style={{ 
                         width: '30px',
                         minWidth: '30px',

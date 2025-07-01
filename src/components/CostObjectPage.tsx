@@ -550,7 +550,7 @@ const CostObjectPage: React.FC = () => {
                                 }
                               </button>
                             )}
-                            <span className={depth > 0 ? 'text-gray-600 italic' : 'font-medium text-gray-900'}>
+                            <span className={depth > 0 ? 'text-gray-600 ' : 'font-medium text-gray-900'}>
                               {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
                             </span>
                           </div>

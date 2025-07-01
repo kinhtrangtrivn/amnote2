@@ -354,7 +354,7 @@ const CostObjectPage: React.FC = () => {
         <div className="flex items-center space-x-3 mt-4 sm:mt-0">
           {/* In ấn */}
           <div className="relative print-dropdown">
-            <button onClick={() => handlePrint()}
+            <button onClick={() => handlePrint('vi')} 
               className="inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
             >
               <Icons.Printer size={16}/> <span className="hidden sm:block">In ấn</span>

@@ -359,25 +359,7 @@ const CostObjectPage: React.FC = () => {
             >
               <Icons.Printer size={16}/> <span className="hidden sm:block">In ấn</span>
             </button>
-            {showPrintMenu && (
-              <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border z-10">
-                <button onClick={() => handlePrint('vi')}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm"
-                >
-                  <Icons.FileText size={16}/> <span>Tiếng Việt</span>
-                </button>
-                <button onClick={() => handlePrint('en')}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm"
-                >
-                  <Icons.FileText size={16}/> <span>English</span>
-                </button>
-                <button onClick={() => handlePrint('ko')}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm"
-                >
-                  <Icons.FileText size={16}/> <span>한국어</span>
-                </button>
-              </div>
-            )}
+            
           </div> 
           {/* Xuất Excel */}
           <button onClick={() => setIsExcelModalOpen(true)}

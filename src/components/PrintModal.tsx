@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Printer, FileText, Download, Calendar, Building2 } from 'lucide-react';
+import { X, Printer, FileText, Download, Calendar, Building2, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface PrintModalProps {
   isOpen: boolean;
@@ -26,61 +26,71 @@ const languages: PrintLanguage[] = [
 
 const translations = {
   vi: {
-    title: 'Đối tượng tập hợp chi phí',
+    title: 'DANH SÁCH ĐỐI TƯỢNG TẬP HỢP CHI PHÍ',
     printDate: 'Ngày in',
     columns: {
+      stt: 'STT',
       code: 'Mã đối tượng',
-      nameVi: 'Đối tượng tập hợp chi phí (Tiếng Việt)',
-      nameEn: 'Đối tượng tập hợp chi phí (Tiếng Anh)',
-      nameKo: 'Đối tượng tập hợp chi phí (Tiếng Hàn)',
+      nameVi: 'Tên đối tượng (Tiếng Việt)',
+      nameEn: 'Tên đối tượng (Tiếng Anh)',
+      nameKo: 'Tên đối tượng (Tiếng Hàn)',
       notes: 'Ghi chú'
     },
     footer: {
       preparedBy: 'Người lập biểu',
       accountant: 'Kế toán trưởng',
       director: 'Giám đốc',
-      signature: '(Ký họ tên)'
-    }
+      signature: '(Ký họ tên)',
+      date: 'Ngày ... tháng ... năm ...'
+    },
+    summary: 'Tổng cộng có {count} đối tượng tập hợp chi phí'
   },
   en: {
-    title: 'Cost Center Objects',
+    title: 'COST CENTER OBJECTS LIST',
     printDate: 'Print Date',
     columns: {
+      stt: 'No.',
       code: 'Object Code',
-      nameVi: 'Cost Center Object (Vietnamese)',
-      nameEn: 'Cost Center Object (English)',
-      nameKo: 'Cost Center Object (Korean)',
+      nameVi: 'Object Name (Vietnamese)',
+      nameEn: 'Object Name (English)',
+      nameKo: 'Object Name (Korean)',
       notes: 'Notes'
     },
     footer: {
       preparedBy: 'Prepared by',
       accountant: 'Chief Accountant',
       director: 'Director',
-      signature: '(Signature)'
-    }
+      signature: '(Signature)',
+      date: 'Date ... Month ... Year ...'
+    },
+    summary: 'Total: {count} cost center objects'
   },
   ko: {
-    title: '비용집계 대상',
+    title: '비용집계 대상 목록',
     printDate: '인쇄 날짜',
     columns: {
+      stt: '번호',
       code: '대상 코드',
-      nameVi: '비용집계 대상 (베트남어)',
-      nameEn: '비용집계 대상 (영어)',
-      nameKo: '비용집계 대상 (한국어)',
+      nameVi: '대상명 (베트남어)',
+      nameEn: '대상명 (영어)',
+      nameKo: '대상명 (한국어)',
       notes: '비고'
     },
     footer: {
       preparedBy: '작성자',
       accountant: '회계 책임자',
       director: '이사',
-      signature: '(서명)'
-    }
+      signature: '(서명)',
+      date: '날짜 ... 월 ... 년 ...'
+    },
+    summary: '총 {count}개의 비용집계 대상'
   }
 };
 
 export default function PrintModal({ isOpen, onClose, data, companyInfo }: PrintModalProps) {
   const [selectedLanguage, setSelectedLanguage] = useState<PrintLanguage>(languages[0]);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(100);
 
   if (!isOpen) return null;
 
@@ -98,84 +108,130 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
   );
 
   const handlePrint = () => {
-    setIsPreviewMode(true);
+    // Đảm bảo chỉ in phần PrintContent
     setTimeout(() => {
       window.print();
     }, 100);
   };
- 
+
   const handleDownloadPDF = () => {
-    // In a real application, you would use a library like jsPDF or html2pdf
     alert(`Đang tải xuống PDF bằng ${selectedLanguage.name}...`);
   };
 
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 10, 150));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 10, 50));
+  };
+
   const PrintContent = () => (
-    <div className="print-content bg-white">
-      {/* Header */}
-      <div className="text-center mb-8 border-b-2 border-gray-300 pb-6">
-        <h1 className="text-xl font-bold text-gray-900 mb-2">{company.name}</h1>
-        <p className="text-sm text-gray-700 mb-1">{company.address}</p>
-        <p className="text-sm text-gray-700">MST: {company.taxCode}</p>
+    <div id="print-content" className="print-content bg-white">
+      {/* Header - Company Info */}
+      <div className="print-header text-center mb-8 pb-4 border-b-2 border-gray-800">
+        <h1 className="text-lg font-bold text-gray-900 mb-2 uppercase tracking-wide">
+          {company.name}
+        </h1>
+        <p className="text-sm text-gray-700 mb-1">
+          <strong>Địa chỉ:</strong> {company.address}
+        </p>
+        <p className="text-sm text-gray-700">
+          <strong>Mã số thuế:</strong> {company.taxCode}
+        </p>
       </div>
 
       {/* Title */}
-      <div className="text-center mb-6">
-        <h2 className="text-lg font-bold text-gray-900 uppercase mb-2">{t.title}</h2>
-        <p className="text-sm text-gray-600">{t.printDate}: {currentDate}</p>
+      <div className="print-title text-center mb-6">
+        <h2 className="text-base font-bold text-gray-900 uppercase mb-3 tracking-wider">
+          {t.title}
+        </h2>
+        <div className="flex justify-between items-center text-sm text-gray-700">
+          <span>{t.printDate}: {currentDate}</span>
+          <span>Trang: 1</span>
+        </div>
       </div>
 
       {/* Table */}
-      <div className="mb-12">
-        <table className="w-full border-collapse border border-gray-400">
+      <div className="print-table mb-8">
+        <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-100">
-              <th className="border border-gray-400 px-3 py-2 text-left text-sm font-semibold">
+            <tr>
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100 w-12">
+                {t.columns.stt}
+              </th>
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100 w-24">
                 {t.columns.code}
               </th>
-              <th className="border border-gray-400 px-3 py-2 text-left text-sm font-semibold">
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
                 {t.columns.nameVi}
               </th>
-              <th className="border border-gray-400 px-3 py-2 text-left text-sm font-semibold">
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
                 {t.columns.nameEn}
               </th>
-              <th className="border border-gray-400 px-3 py-2 text-left text-sm font-semibold">
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
                 {t.columns.nameKo}
               </th>
-              <th className="border border-gray-400 px-3 py-2 text-left text-sm font-semibold">
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
                 {t.columns.notes}
               </th>
             </tr>
           </thead>
           <tbody>
             {data.map((item, index) => (
-              <tr key={item.id || index}>
-                <td className="border border-gray-400 px-3 py-2 text-sm">{item.code}</td>
-                <td className="border border-gray-400 px-3 py-2 text-sm">{item.nameVi}</td>
-                <td className="border border-gray-400 px-3 py-2 text-sm">{item.nameEn}</td>
-                <td className="border border-gray-400 px-3 py-2 text-sm">{item.nameKo}</td>
-                <td className="border border-gray-400 px-3 py-2 text-sm">{item.notes}</td>
+              <tr key={item.id || index} className="print-row">
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-center text-xs">
+                  {index + 1}
+                </td>
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-xs font-medium">
+                  {item.code}
+                </td>
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                  {item.nameVi}
+                </td>
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                  {item.nameEn || '-'}
+                </td>
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                  {item.nameKo || '-'}
+                </td>
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                  {item.notes || '-'}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* Footer */}
-      <div className="grid grid-cols-3 gap-8 mt-16">
-        <div className="text-center">
-          <p className="font-semibold text-sm mb-1">{t.footer.preparedBy}</p>
-          <p className="text-xs text-gray-600 mb-12">{t.footer.signature}</p>
-          <div className="border-b border-gray-400 w-32 mx-auto"></div>
-        </div>
-        <div className="text-center">
-          <p className="font-semibold text-sm mb-1">{t.footer.accountant}</p>
-          <p className="text-xs text-gray-600 mb-12">{t.footer.signature}</p>
-          <div className="border-b border-gray-400 w-32 mx-auto"></div>
-        </div>
-        <div className="text-center">
-          <p className="font-semibold text-sm mb-1">{t.footer.director}</p>
-          <p className="text-xs text-gray-600 mb-12">{t.footer.signature}</p>
-          <div className="border-b border-gray-400 w-32 mx-auto"></div>
+      {/* Summary */}
+      <div className="print-summary mb-8">
+        <p className="text-sm font-medium text-gray-900">
+          {t.summary.replace('{count}', data.length.toString())}
+        </p>
+      </div>
+
+      {/* Footer - Signatures */}
+      <div className="print-footer">
+        <div className="grid grid-cols-3 gap-8 mt-12">
+          <div className="text-center">
+            <p className="font-bold text-sm mb-1">{t.footer.preparedBy}</p>
+            <p className="text-xs text-gray-600 mb-1">{t.footer.date}</p>
+            <p className="text-xs text-gray-600 mb-16">{t.footer.signature}</p>
+            <div className="border-b-2 border-gray-800 w-32 mx-auto"></div>
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-sm mb-1">{t.footer.accountant}</p>
+            <p className="text-xs text-gray-600 mb-1">{t.footer.date}</p>
+            <p className="text-xs text-gray-600 mb-16">{t.footer.signature}</p>
+            <div className="border-b-2 border-gray-800 w-32 mx-auto"></div>
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-sm mb-1">{t.footer.director}</p>
+            <p className="text-xs text-gray-600 mb-1">{t.footer.date}</p>
+            <p className="text-xs text-gray-600 mb-16">{t.footer.signature}</p>
+            <div className="border-b-2 border-gray-800 w-32 mx-auto"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -183,28 +239,71 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
 
   if (isPreviewMode) {
     return (
-      <div className="fixed inset-0 bg-white z-50 overflow-auto">
-        <div className="max-w-4xl mx-auto p-8">
-          <div className="flex items-center justify-between mb-6 no-print">
-            <h3 className="text-lg font-semibold">Xem trước bản in</h3>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handlePrint}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <Printer size={16} />
-                <span>In</span>
-              </button>
-              <button
-                onClick={() => setIsPreviewMode(false)}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
-                <X size={16} />
-                <span>Đóng</span>
-              </button>
+      <div className="fixed inset-0 bg-gray-100 z-50 overflow-auto">
+        {/* Preview Header - NO PRINT */}
+        <div className="no-print bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <h3 className="text-lg font-semibold text-gray-900">Xem trước bản in</h3>
+                <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={handleZoomOut}
+                    className="p-1.5 hover:bg-white rounded transition-colors"
+                    title="Thu nhỏ"
+                  >
+                    <ZoomOut size={16} />
+                  </button>
+                  <span className="text-sm font-medium px-2">{zoomLevel}%</span>
+                  <button
+                    onClick={handleZoomIn}
+                    className="p-1.5 hover:bg-white rounded transition-colors"
+                    title="Phóng to"
+                  >
+                    <ZoomIn size={16} />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleDownloadPDF}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <Download size={16} />
+                  <span>Tải PDF</span>
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Printer size={16} />
+                  <span>In</span>
+                </button>
+                <button
+                  onClick={() => setIsPreviewMode(false)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  <X size={16} />
+                  <span>Đóng</span>
+                </button>
+              </div>
             </div>
           </div>
-          <div className="bg-white shadow-lg">
+        </div>
+
+        {/* Preview Content */}
+        <div className="max-w-4xl mx-auto p-8">
+          <div 
+            className="bg-white shadow-2xl mx-auto print-here"
+            style={{ 
+              transform: `scale(${zoomLevel / 100})`,
+              transformOrigin: 'top center',
+              width: '210mm',
+              minHeight: '297mm',
+              padding: '20mm'
+            }}
+          >
             <PrintContent />
           </div>
         </div>
@@ -276,7 +375,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
             {/* Print Options */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Tùy chọn in
+                Thông tin báo cáo
               </label>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -352,7 +451,10 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
               </button>
               
               <button
-                onClick={handlePrint}
+                onClick={() => {
+                  setIsPreviewMode(true);
+                  setTimeout(handlePrint, 100);
+                }}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Printer size={16} />
@@ -363,42 +465,118 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
         </div>
       </div>
 
-      {/* Print Styles */}
+      {/* Print Styles - CHỈ IN PHẦN PRINT-CONTENT */}
       <style jsx global>{`
         @media print {
-          .no-print {
-            display: none !important;
+          /* Ẩn tất cả các thành phần */
+          * {
+            visibility: hidden !important;
           }
           
-          .print-content {
-            font-size: 12px;
-            line-height: 1.4;
-            color: black;
+          /* Chỉ hiển thị nội dung cần in */
+          #print-content,
+          #print-content * {
+            visibility: visible !important;
           }
           
-          .print-content table {
-            page-break-inside: avoid;
+          /* Đặt lại vị trí và kích thước cho nội dung in */
+          #print-content {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 15mm !important;
+            font-family: 'Times New Roman', serif !important;
+            background: white !important;
           }
           
-          .print-content thead {
-            display: table-header-group;
+          /* Thiết lập trang in */
+          @page {
+            size: A4 portrait;
+            margin: 15mm;
           }
           
-          .print-content tr {
-            page-break-inside: avoid;
-          }
-          
+          /* Đảm bảo không có phần tử nào khác hiển thị */
           body {
-            margin: 0;
-            padding: 20px;
+            margin: 0 !important;
+            padding: 0 !important;
           }
           
+          /* Styling chi tiết cho bảng in */
+          .print-content {
+            font-size: 11px !important;
+            line-height: 1.3 !important;
+            color: black !important;
+          }
+          
+          .print-header h1 {
+            font-size: 14px !important;
+            font-weight: bold !important;
+            margin-bottom: 8px !important;
+          }
+          
+          .print-title h2 {
+            font-size: 13px !important;
+            font-weight: bold !important;
+            margin-bottom: 12px !important;
+          }
+          
+          .print-table table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            page-break-inside: avoid;
+          }
+          
+          .print-th {
+            background-color: #f5f5f5 !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            padding: 4px !important;
+            border: 1px solid black !important;
+            font-size: 10px !important;
+          }
+          
+          .print-td {
+            padding: 3px 4px !important;
+            border: 1px solid black !important;
+            vertical-align: top !important;
+            font-size: 10px !important;
+          }
+          
+          .print-row {
+            page-break-inside: avoid;
+          }
+          
+          .print-footer {
+            page-break-inside: avoid;
+            margin-top: 20px !important;
+          }
+          
+          .print-summary {
+            margin-bottom: 20px !important;
+            font-weight: bold !important;
+          }
+          
+          /* Đảm bảo màu sắc được in */
           * {
             -webkit-print-color-adjust: exact !important;
             color-adjust: exact !important;
           }
+          
+          /* Ẩn hoàn toàn các class no-print */
+          .no-print {
+            display: none !important;
+            visibility: hidden !important;
+          }
+        }
+        
+        /* Styles cho preview mode */
+        .print-content {
+          font-family: 'Times New Roman', serif;
+          line-height: 1.4;
         }
       `}</style>
     </>
   );
-} 
+}

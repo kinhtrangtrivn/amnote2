@@ -108,11 +108,59 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
   );
 
   const handlePrint = () => {
-    // Đảm bảo chỉ in phần PrintContent
-    setTimeout(() => {
-      window.print();
-    }, 100);
+    const printElement = document.getElementById('print-content');
+    if (!printElement) {
+      console.error('Không tìm thấy #print-content');
+      return;
+    }
+  
+    // Tạo iframe ẩn
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+  
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+  
+    // Lấy tất cả style hiện tại
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map(node => node.outerHTML)
+      .join('');
+  
+    // Viết HTML vào iframe
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Print</title>
+          ${styles}
+          <style>
+            @page { size: A4 portrait; margin: 15mm; }
+            body { margin: 0; padding: 0; }
+          </style>
+        </head>
+        <body>
+          ${printElement.innerHTML}
+        </body>
+      </html>
+    `);
+    doc.close();
+  
+    // Đợi nội dung load rồi in
+    iframe.onload = () => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      // Dọn dẹp iframe sau khi in
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    };
   };
+
 
   const handleDownloadPDF = () => {
     alert(`Đang tải xuống PDF bằng ${selectedLanguage.name}...`);

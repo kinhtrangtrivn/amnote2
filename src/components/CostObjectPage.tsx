@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
 
 import ExcelImportModal from './ExcelImportModal';
+import PrintModal from './PrintModal';
 
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
@@ -40,6 +41,9 @@ const CostObjectPage: React.FC = () => {
 
   // Modal Excel
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+
+  // Modal Print
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
    // Hàm xử lý import từ Excel
   const handleImportFromExcel = (rows: any[]) => {
@@ -218,8 +222,7 @@ const CostObjectPage: React.FC = () => {
   };
 
   const handlePrint = (lang: 'vi' | 'en' | 'ko') => {
-    const lbl = { vi: 'Tiếng Việt', en: 'English', ko: '한국어' }[lang];
-    alert(`Đang in báo cáo (${lbl})…`);
+    setIsPrintModalOpen(true);
     setShowPrintMenu(false);
   };
 
@@ -804,6 +807,18 @@ const CostObjectPage: React.FC = () => {
         isOpen={isExcelModalOpen}
         onClose={() => setIsExcelModalOpen(false)}
         onImport={handleImportFromExcel}
+      />
+
+      {/* Print Modal */}
+      <PrintModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        data={doiTuongList}
+        companyInfo={{
+          name: 'Công ty TNHH ABC Technology',
+          address: '123 Đường ABC, Quận Ba Đình, Hà Nội',
+          taxCode: '0123456789'
+        }}
       />
       
       {/* MODAL THÊM/SỬA */}

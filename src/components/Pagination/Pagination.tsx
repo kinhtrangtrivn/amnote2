@@ -130,6 +130,23 @@ export default function Pagination({
               {' của '}
               <span className="font-medium">{totalItems.toLocaleString('vi-VN')}</span>
             </p>
+            <div className="flex items-center space-x-2">
+              <label htmlFor="itemsPerPageMobile" className="text-sm text-gray-700">
+                Hiển thị:
+              </label>
+              <select
+                id="itemsPerPageMobile"
+                value={itemsPerPage}
+                onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                className="block w-auto px-2 py-1 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              >
+                {itemsPerPageOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <button

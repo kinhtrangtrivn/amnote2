@@ -571,7 +571,7 @@ const CostObjectPage: React.FC = () => {
                   style={{ 
                     width: '0px',
                     minWidth: '0px',
-                    maxWidth: '0px'
+                    maxWidth: '0px' 
                   }}
                 >
                 </th> 

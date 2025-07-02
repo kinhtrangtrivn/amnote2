@@ -170,10 +170,9 @@ export default function Pagination({
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-1.5 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronRight size={16} />
-              <span className="sr-only">Trang sau</span>
             </button>
              <button
                 onClick={() => handlePageChange(totalPages)}

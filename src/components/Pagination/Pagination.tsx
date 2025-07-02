@@ -100,7 +100,7 @@ export default function Pagination({
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-1.5 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeft size={16} />
               <span className="sr-only">Trang trước</span>
@@ -138,7 +138,7 @@ export default function Pagination({
                 id="itemsPerPageMobile"
                 value={itemsPerPage}
                 onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                className="block w-auto px-2 py-1 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="p-1.5 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {itemsPerPageOptions.map((option) => (
                   <option key={option} value={option}>

@@ -176,6 +176,14 @@ export default function Pagination({
               <ChevronRight size={16} />
               <span className="sr-only">Trang sau</span>
             </button>
+             <button
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage === totalPages}
+                className="p-1.5 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Trang cuối"
+              >
+                <ChevronsRight size={16} />
+              </button>
           </div>
         </div>
 

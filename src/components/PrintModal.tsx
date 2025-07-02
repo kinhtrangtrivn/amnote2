@@ -231,7 +231,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
             margin: 0; 
             padding: 0; 
             font-family: 'Times New Roman', serif;
-            font-size: 11px;
+            font-size: 13px;
             line-height: 1.3;
             color: black;
             background: white;
@@ -250,7 +250,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           }
           
           .print-header h1 {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             margin-bottom: 8px;
             text-transform: uppercase;
@@ -258,7 +258,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           }
           
           .print-header p {
-            font-size: 11px;
+            font-size: 13px;
             margin-bottom: 4px;
           }
           
@@ -268,7 +268,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           }
           
           .print-title h2 {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: bold;
             margin-bottom: 12px;
             text-transform: uppercase;
@@ -278,7 +278,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           .title-info {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
+            font-size: 13px;
             margin-top: 8px;
           }
           
@@ -299,7 +299,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
             text-align: center;
             padding: 6px 4px;
             border: 1px solid black;
-            font-size: 10px;
+            font-size: 12px;
             vertical-align: middle;
           }
           
@@ -307,7 +307,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
             padding: 4px;
             border: 1px solid black;
             vertical-align: top;
-            font-size: 10px;
+            font-size: 12px;
           }
           
           .print-td.center {
@@ -321,7 +321,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           .print-summary {
             margin-bottom: 24px;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 13px;
           }
           
           .print-footer {
@@ -341,18 +341,18 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           
           .signature-item .title {
             font-weight: bold;
-            font-size: 11px;
+            font-size: 13px;
             margin-bottom: 4px;
           }
           
           .signature-item .date {
-            font-size: 10px;
+            font-size: 12px;
             color: #666;
             margin-bottom: 4px;
           }
           
           .signature-item .note {
-            font-size: 10px;
+            font-size: 12px;
             color: #666;
             margin-bottom: 64px;
           }
@@ -966,7 +966,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           
           /* Styling chi tiết cho bảng in */
           .print-content {
-            font-size: 11px !important;
+            font-size: 13px !important;
             line-height: 1.3 !important;
             color: black !important;
           }
@@ -978,13 +978,13 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           }
           
           .print-header h1 {
-            font-size: 14px !important;
+            font-size: 16px !important;
             font-weight: bold !important;
             margin-bottom: 8px !important;
           }
           
           .print-title h2 {
-            font-size: 13px !important;
+            font-size: 15px !important;
             font-weight: bold !important;
             margin-bottom: 12px !important;
           }
@@ -1001,14 +1001,14 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
             text-align: center !important;
             padding: 4px !important;
             border: 1px solid black !important;
-            font-size: 10px !important;
+            font-size: 12px !important;
           }
           
           .print-td {
             padding: 3px 4px !important;
             border: 1px solid black !important;
             vertical-align: top !important;
-            font-size: 10px !important;
+            font-size: 12px !important;
           }
           
           .print-row {

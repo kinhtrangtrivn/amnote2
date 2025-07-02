@@ -184,14 +184,122 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
     ), [selectedLanguage.code]
   );
 
+  // Create full print content (without virtualization) for direct printing
+  const createFullPrintContent = useCallback(() => {
+    return `
+      <div id="print-content-full" class="print-content bg-white">
+        <!-- Header - Company Info -->
+        <div class="print-header text-center mb-8 pb-4 border-b-2 border-gray-800">
+          <h1 class="text-lg font-bold text-gray-900 mb-2 uppercase tracking-wide">
+            ${company.name}
+          </h1>
+          <p class="text-sm text-gray-700 mb-1">
+            <strong>Địa chỉ:</strong> ${company.address}
+          </p>
+          <p class="text-sm text-gray-700">
+            <strong>Mã số thuế:</strong> ${company.taxCode}
+          </p>
+        </div>
+
+        <!-- Title -->
+        <div class="print-title text-center mb-6">
+          <h2 class="text-base font-bold text-gray-900 uppercase mb-3 tracking-wider">
+            ${t.title}
+          </h2>
+          <div class="flex justify-between items-center text-sm text-gray-700">
+            <span>${t.printDate}: ${currentDate}</span>
+            <span>Trang: 1</span>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="print-table mb-8">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr>
+                <th class="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100 w-12">
+                  ${t.columns.stt}
+                </th>
+                <th class="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100 w-24">
+                  ${t.columns.code}
+                </th>
+                <th class="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
+                  ${t.columns.nameVi}
+                </th>
+                <th class="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
+                  ${t.columns.nameEn}
+                </th>
+                <th class="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
+                  ${t.columns.nameKo}
+                </th>
+                <th class="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
+                  ${t.columns.notes}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              ${deferredData.map((item, index) => `
+                <tr class="print-row">
+                  <td class="print-td border border-gray-600 px-2 py-1.5 text-center text-xs">
+                    ${index + 1}
+                  </td>
+                  <td class="print-td border border-gray-600 px-2 py-1.5 text-xs font-medium">
+                    ${item.code}
+                  </td>
+                  <td class="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                    ${item.nameVi}
+                  </td>
+                  <td class="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                    ${item.nameEn || '-'}
+                  </td>
+                  <td class="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                    ${item.nameKo || '-'}
+                  </td>
+                  <td class="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                    ${item.notes || '-'}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Summary -->
+        <div class="print-summary mb-8">
+          <p class="text-sm font-medium text-gray-900">
+            ${t.summary.replace('{count}', deferredData.length.toString())}
+          </p>
+        </div>
+
+        <!-- Footer - Signatures -->
+        <div class="print-footer">
+          <div class="grid grid-cols-3 gap-8 mt-12">
+            <div class="text-center">
+              <p class="font-bold text-sm mb-1">${t.footer.preparedBy}</p>
+              <p class="text-xs text-gray-600 mb-1">${t.footer.date}</p>
+              <p class="text-xs text-gray-600 mb-16">${t.footer.signature}</p>
+              <div class="border-b-2 border-gray-800 w-32 mx-auto"></div>
+            </div>
+            <div class="text-center">
+              <p class="font-bold text-sm mb-1">${t.footer.accountant}</p>
+              <p class="text-xs text-gray-600 mb-1">${t.footer.date}</p>
+              <p class="text-xs text-gray-600 mb-16">${t.footer.signature}</p>
+              <div class="border-b-2 border-gray-800 w-32 mx-auto"></div>
+            </div>
+            <div class="text-center">
+              <p class="font-bold text-sm mb-1">${t.footer.director}</p>
+              <p class="text-xs text-gray-600 mb-1">${t.footer.date}</p>
+              <p class="text-xs text-gray-600 mb-16">${t.footer.signature}</p>
+              <div class="border-b-2 border-gray-800 w-32 mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }, [deferredData, company, t, currentDate]);
+
   // Optimized handlers with useCallback
   const handlePrint = useCallback(() => {
-    const printElement = document.getElementById('print-content');
-    if (!printElement) {
-      console.error('Không tìm thấy #print-content');
-      return;
-    }
-  
     // Tạo iframe ẩn
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
@@ -210,6 +318,9 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
       .map(node => node.outerHTML)
       .join('');
   
+    // Tạo nội dung in đầy đủ (không có virtualization)
+    const fullPrintContent = createFullPrintContent();
+  
     // Viết HTML vào iframe
     doc.open();
     doc.write(`
@@ -221,10 +332,72 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           <style>
             @page { size: A4 portrait; margin: 15mm; }
             body { margin: 0; padding: 0; }
+            
+            /* Print-specific styles */
+            .print-content {
+              font-family: 'Times New Roman', serif !important;
+              font-size: 11px !important;
+              line-height: 1.3 !important;
+              color: black !important;
+            }
+            
+            .print-header h1 {
+              font-size: 14px !important;
+              font-weight: bold !important;
+              margin-bottom: 8px !important;
+            }
+            
+            .print-title h2 {
+              font-size: 13px !important;
+              font-weight: bold !important;
+              margin-bottom: 12px !important;
+            }
+            
+            .print-table table {
+              width: 100% !important;
+              border-collapse: collapse !important;
+              page-break-inside: avoid;
+            }
+            
+            .print-th {
+              background-color: #f5f5f5 !important;
+              font-weight: bold !important;
+              text-align: center !important;
+              padding: 4px !important;
+              border: 1px solid black !important;
+              font-size: 10px !important;
+            }
+            
+            .print-td {
+              padding: 3px 4px !important;
+              border: 1px solid black !important;
+              vertical-align: top !important;
+              font-size: 10px !important;
+            }
+            
+            .print-row {
+              page-break-inside: avoid;
+            }
+            
+            .print-footer {
+              page-break-inside: avoid;
+              margin-top: 20px !important;
+            }
+            
+            .print-summary {
+              margin-bottom: 20px !important;
+              font-weight: bold !important;
+            }
+            
+            /* Đảm bảo màu sắc được in */
+            * {
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
           </style>
         </head>
         <body>
-          ${printElement.innerHTML}
+          ${fullPrintContent}
         </body>
       </html>
     `);
@@ -237,7 +410,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
       // Dọn dẹp iframe sau khi in
       setTimeout(() => document.body.removeChild(iframe), 1000);
     };
-  }, []);
+  }, [createFullPrintContent]);
 
   const handleDownloadPDF = useCallback(() => {
     alert(`Đang tải xuống PDF bằng ${selectedLanguage.name}...`);
@@ -282,9 +455,14 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
     });
   }, []);
 
-  // Memoized PrintContent component
+  // Handle direct print (without preview)
+  const handleDirectPrint = useCallback(() => {
+    handlePrint();
+  }, [handlePrint]);
+
+  // Memoized PrintContent component for preview (with virtualization for performance)
   const PrintContent = useMemo(() => {
-    const shouldUseVirtualization = deferredData.length > 1000;
+    const shouldUseVirtualization = deferredData.length > 100; // Use virtualization for preview when data is large
 
     return (
       <div id="print-content" className="print-content bg-white">
@@ -350,6 +528,15 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                     >
                       {Row}
                     </List>
+                    {deferredData.length > 100 && (
+                      <div className="text-center py-4 bg-blue-50 border border-blue-200">
+                        <p className="text-sm text-blue-700">
+                          <strong>Lưu ý:</strong> Chế độ xem trước chỉ hiển thị một phần dữ liệu để tối ưu hiệu suất.
+                          <br />
+                          Khi in, toàn bộ {deferredData.length} bản ghi sẽ được in đầy đủ.
+                        </p>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -457,7 +644,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                   className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Printer size={16} />
-                  <span>In</span>
+                  <span>In toàn bộ</span>
                 </button>
                 <button
                   onClick={handlePreviewModeToggle}
@@ -599,11 +786,9 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                 <p>Số lượng bản ghi: <strong>{deferredData.length}</strong></p>
                 <p>Ngôn ngữ: <strong>{selectedLanguage.name}</strong></p>
                 <p>Tiêu đề: <strong>{t.title}</strong></p>
-                {deferredData.length > 1000 && (
-                  <p className="text-orange-600 font-medium">
-                    ⚡ Sử dụng virtualization để tối ưu hiệu suất
-                  </p>
-                )}
+                <p className="text-green-600 font-medium mt-2">
+                  ✓ Khi in trực tiếp, toàn bộ {deferredData.length} bản ghi sẽ được in đầy đủ
+                </p>
               </div>
             </div>
           </div>
@@ -635,10 +820,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
               </button>
               
               <button
-                onClick={() => {
-                  handlePreviewModeToggle();
-                  setTimeout(handlePrint, 100);
-                }}
+                onClick={handleDirectPrint}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Printer size={16} />
@@ -649,7 +831,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
         </div>
       </div>
 
-      {/* Print Styles - CHỈ IN PHẦN PRINT-CONTENT */}
+      {/* Print Styles */}
       <style jsx global>{`
         /* CSS isolation cho container preview */
         .preview-container {
@@ -664,13 +846,13 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           }
           
           /* Chỉ hiển thị nội dung cần in */
-          #print-content,
-          #print-content * {
+          #print-content-full,
+          #print-content-full * {
             visibility: visible !important;
           }
           
           /* Đặt lại vị trí và kích thước cho nội dung in */
-          #print-content {
+          #print-content-full {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
@@ -691,67 +873,6 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           body {
             margin: 0 !important;
             padding: 0 !important;
-          }
-          
-          /* Styling chi tiết cho bảng in */
-          .print-content {
-            font-size: 11px !important;
-            line-height: 1.3 !important;
-            color: black !important;
-          }
-          
-          .print-header h1 {
-            font-size: 14px !important;
-            font-weight: bold !important;
-            margin-bottom: 8px !important;
-          }
-          
-          .print-title h2 {
-            font-size: 13px !important;
-            font-weight: bold !important;
-            margin-bottom: 12px !important;
-          }
-          
-          .print-table table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-            page-break-inside: avoid;
-          }
-          
-          .print-th {
-            background-color: #f5f5f5 !important;
-            font-weight: bold !important;
-            text-align: center !important;
-            padding: 4px !important;
-            border: 1px solid black !important;
-            font-size: 10px !important;
-          }
-          
-          .print-td {
-            padding: 3px 4px !important;
-            border: 1px solid black !important;
-            vertical-align: top !important;
-            font-size: 10px !important;
-          }
-          
-          .print-row {
-            page-break-inside: avoid;
-          }
-          
-          .print-footer {
-            page-break-inside: avoid;
-            margin-top: 20px !important;
-          }
-          
-          .print-summary {
-            margin-bottom: 20px !important;
-            font-weight: bold !important;
-          }
-          
-          /* Đảm bảo màu sắc được in */
-          * { 
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
           }
           
           /* Ẩn hoàn toàn các class no-print */

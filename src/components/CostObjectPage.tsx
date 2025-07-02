@@ -567,14 +567,13 @@ const CostObjectPage: React.FC = () => {
                   </th>
                 ))}
                 <th 
-                  className="sticky right-0 z-20 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-700"
+                  className="sticky right-0  bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-700"
                   style={{ 
-                    width: '100px',
-                    minWidth: '100px',
-                    maxWidth: '100px'
+                    width: '0px',
+                    minWidth: '0px',
+                    maxWidth: '0px'
                   }}
                 >
-                  Thao tác
                 </th> 
               </tr>
             </thead>

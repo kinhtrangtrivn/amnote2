@@ -5,6 +5,7 @@ import * as Icons from 'lucide-react';
 
 import ExcelImportModal from './ExcelImportModal';
 import PrintModal from './PrintModal';
+import Pagination from './Pagination';
 
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
@@ -109,7 +110,7 @@ const CostObjectPage: React.FC = () => {
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
   const [showPrintMenu, setShowPrintMenu] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50; // Giảm từ 10 xuống 50 để hiển thị nhiều hơn nhưng vẫn tối ưu
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   // Hover state for rows
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
@@ -229,12 +230,13 @@ const CostObjectPage: React.FC = () => {
   const paginationData = useMemo(() => {
     const totalPages = Math.ceil(flattenedItems.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const displayed = flattenedItems.slice(startIndex, startIndex + itemsPerPage);
+    const endIndex = startIndex + itemsPerPage;
+    const displayed = flattenedItems.slice(startIndex, endIndex);
     
-    return { totalPages, startIndex, displayed };
+    return { totalPages, startIndex, endIndex, displayed };
   }, [flattenedItems, currentPage, itemsPerPage]);
 
-  const { totalPages, startIndex, displayed } = paginationData;
+  const { totalPages, startIndex, endIndex, displayed } = paginationData;
 
   // Hàm để tìm tất cả các con của một đối tượng (đệ quy)
   const getAllChildren = useCallback((parentId: string, items: DoiTuongTapHopChiPhi[]): string[] => {
@@ -362,6 +364,16 @@ const CostObjectPage: React.FC = () => {
         col.id === columnId ? { ...col, [field]: value } : col
       )
     );
+  }, []);
+
+  // Pagination handlers
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
+  const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
   }, []);
 
   // Đóng dropdown khi click ngoài
@@ -668,69 +680,26 @@ const CostObjectPage: React.FC = () => {
               })}
             </tbody>
           </table>
+
+          {filteredData.length === 0 && (
+            <div className="text-center py-8">
+              <Icons.Building2 size={48} className="mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500">Không tìm thấy dữ liệu nào</p>
+            </div>
+          )}
         </div>
 
-        {/* PHÂN TRANG */}
-        <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
-          <div className="text-sm text-gray-700">
-            Hiển thị {startIndex + 1}–{Math.min(startIndex + displayed.length, flattenedItems.length)} của {flattenedItems.length.toLocaleString()} kết quả
-          </div>
-          <div className="flex items-center space-x-2">
-            <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 border rounded text-sm hover:bg-gray-100 disabled:opacity-50"
-            >
-              Trước
-            </button>
-            
-            {/* Hiển thị pagination thông minh cho số trang lớn */}
-            {(() => {
-              const maxVisiblePages = 5;
-              const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-              const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-              const pages = [];
-              
-              if (startPage > 1) {
-                pages.push(1);
-                if (startPage > 2) pages.push('...');
-              }
-              
-              for (let i = startPage; i <= endPage; i++) {
-                pages.push(i);
-              }
-              
-              if (endPage < totalPages) {
-                if (endPage < totalPages - 1) pages.push('...');
-                pages.push(totalPages);
-              }
-              
-              return pages.map((page, index) => (
-                page === '...' ? (
-                  <span key={`ellipsis-${index}`} className="px-3 py-1 text-sm text-gray-500">...</span>
-                ) : (
-                  <button 
-                    key={page} 
-                    onClick={() => setCurrentPage(page as number)}
-                    className={`px-3 py-1 border rounded text-sm ${
-                      currentPage === page 
-                        ? 'bg-red-600 text-white border-red-600' 
-                        : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )
-              ));
-            })()}
-            
-            <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 border rounded text-sm hover:bg-gray-100 disabled:opacity-50"
-            >
-              Sau
-            </button>
-          </div>
-        </div>
+        {/* ENHANCED PAGINATION */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={flattenedItems.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+          onItemsPerPageChange={handleItemsPerPageChange}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
 
       {/* SETTINGS PANEL */}

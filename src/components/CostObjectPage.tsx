@@ -251,6 +251,17 @@ const CostObjectPage: React.FC = () => {
     return children;
   }, []);
 
+  // Hàm kiểm tra xem đối tượng có con hay không
+  const hasChildren = useCallback((parentId: string): boolean => {
+    return doiTuongList.some(item => item.parentObject === parentId);
+  }, [doiTuongList]);
+
+  // Hàm lấy danh sách tên các đối tượng con
+  const getChildrenNames = useCallback((parentId: string): string[] => {
+    const directChildren = doiTuongList.filter(item => item.parentObject === parentId);
+    return directChildren.map(child => `${child.code} - ${child.nameVi}`);
+  }, [doiTuongList]);
+
   // --- CRUD Handlers ---
   const handleAdd = useCallback(() => {
     setEditingItem(null);
@@ -273,19 +284,85 @@ const CostObjectPage: React.FC = () => {
   }, []);
 
   const handleDelete = useCallback((id: string) => {
-    if (window.confirm('Xóa đối tượng này?')) {
-      setDoiTuongList(prev => prev.filter(x => x.id !== id));
+    // Tìm đối tượng cần xóa
+    const itemToDelete = doiTuongList.find(item => item.id === id);
+    if (!itemToDelete) {
+      alert('Không tìm thấy đối tượng cần xóa!');
+      return;
     }
+
+    // Kiểm tra xem đối tượng có con hay không
+    if (hasChildren(id)) {
+      const childrenNames = getChildrenNames(id);
+      const childrenList = childrenNames.slice(0, 5).join('\n'); // Hiển thị tối đa 5 con đầu tiên
+      const moreChildren = childrenNames.length > 5 ? `\n... và ${childrenNames.length - 5} đối tượng khác` : '';
+      
+      alert(
+        `Không thể xóa đối tượng "${itemToDelete.code} - ${itemToDelete.nameVi}" vì nó có ${childrenNames.length} đối tượng con:\n\n${childrenList}${moreChildren}\n\nVui lòng xóa tất cả các đối tượng con trước khi xóa đối tượng cha.`
+      );
+      setShowActionMenu(null);
+      return;
+    }
+
+    // Nếu không có con, hiển thị xác nhận xóa
+    const confirmMessage = `Bạn có chắc chắn muốn xóa đối tượng "${itemToDelete.code} - ${itemToDelete.nameVi}" không?`;
+    
+    if (window.confirm(confirmMessage)) {
+      setDoiTuongList(prev => prev.filter(x => x.id !== id));
+      
+      // Nếu đối tượng đang được chọn, bỏ chọn nó
+      setSelectedItems(prev => prev.filter(selectedId => selectedId !== id));
+      
+      // Thông báo xóa thành công
+      console.log(`Đã xóa thành công đối tượng: ${itemToDelete.code} - ${itemToDelete.nameVi}`);
+    }
+    
     setShowActionMenu(null);
-  }, []);
+  }, [doiTuongList, hasChildren, getChildrenNames]);
 
   const handleBulkDelete = useCallback(() => {
-    if (selectedItems.length > 0 &&
-        window.confirm(`Xóa ${selectedItems.length} mục đã chọn?`)) {
-      setDoiTuongList(prev => prev.filter(x => !selectedItems.includes(x.id)));
-      setSelectedItems([]);
+    if (selectedItems.length === 0) {
+      alert('Vui lòng chọn ít nhất một đối tượng để xóa!');
+      return;
     }
-  }, [selectedItems]);
+
+    // Kiểm tra từng đối tượng được chọn xem có con hay không
+    const itemsWithChildren: string[] = [];
+    const itemsCanDelete: string[] = [];
+
+    selectedItems.forEach(id => {
+      const item = doiTuongList.find(x => x.id === id);
+      if (item) {
+        if (hasChildren(id)) {
+          itemsWithChildren.push(`${item.code} - ${item.nameVi}`);
+        } else {
+          itemsCanDelete.push(`${item.code} - ${item.nameVi}`);
+        }
+      }
+    });
+
+    // Nếu có đối tượng có con, thông báo lỗi
+    if (itemsWithChildren.length > 0) {
+      const itemsList = itemsWithChildren.slice(0, 5).join('\n');
+      const moreItems = itemsWithChildren.length > 5 ? `\n... và ${itemsWithChildren.length - 5} đối tượng khác` : '';
+      
+      alert(
+        `Không thể xóa ${itemsWithChildren.length} đối tượng sau vì chúng có đối tượng con:\n\n${itemsList}${moreItems}\n\nVui lòng xóa tất cả các đối tượng con trước khi xóa đối tượng cha.`
+      );
+      return;
+    }
+
+    // Nếu tất cả đối tượng đều có thể xóa
+    if (itemsCanDelete.length > 0) {
+      const confirmMessage = `Bạn có chắc chắn muốn xóa ${itemsCanDelete.length} đối tượng đã chọn không?\n\n${itemsCanDelete.slice(0, 5).join('\n')}${itemsCanDelete.length > 5 ? `\n... và ${itemsCanDelete.length - 5} đối tượng khác` : ''}`;
+      
+      if (window.confirm(confirmMessage)) {
+        setDoiTuongList(prev => prev.filter(x => !selectedItems.includes(x.id)));
+        setSelectedItems([]);
+        console.log(`Đã xóa thành công ${itemsCanDelete.length} đối tượng`);
+      }
+    }
+  }, [selectedItems, doiTuongList, hasChildren]);
 
   const handleSelectAll = useCallback((checked: boolean) =>
     setSelectedItems(checked ? displayed.map(({ item }) => item.id) : []), 
@@ -567,7 +644,7 @@ const CostObjectPage: React.FC = () => {
                   </th>
                 ))}
                 <th 
-                  className="sticky right-0 -z-10 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-700"
+                  className="sticky right-0 z-10 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-700"
                   style={{ 
                     width: '100px',
                     minWidth: '100px',
@@ -580,7 +657,7 @@ const CostObjectPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {displayed.map(({ item, depth }) => {
-                const hasChildren = Boolean(childrenMap[item.id]?.length);
+                const hasChildrenItems = Boolean(childrenMap[item.id]?.length);
                 const isExpanded  = expandedParents.includes(item.id);
                 
                 return (
@@ -617,7 +694,7 @@ const CostObjectPage: React.FC = () => {
                       >
                         {col.dataField === 'code' ? (
                           <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
-                            {hasChildren && (
+                            {hasChildrenItems && (
                               <button onClick={() => toggleExpand(item.id)} className="ml-[-17px] mr-0">
                                 {isExpanded
                                   ? <Icons.ChevronDown size={16}/>
@@ -640,7 +717,7 @@ const CostObjectPage: React.FC = () => {
                     ))}
                     {/* Cột hành động (Edit/Delete) */}
                     <td
-                      className="sticky group-hover:bg-gray-50 right-0 z-20 px-1 py-3 text-center"
+                      className="sticky group-hover:bg-gray-50 right-0 z-10 px-1 py-3 text-center"
                       style={{
                         width: '100px',
                         minWidth: '100px',

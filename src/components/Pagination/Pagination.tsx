@@ -138,7 +138,7 @@ export default function Pagination({
                 id="itemsPerPageMobile"
                 value={itemsPerPage}
                 onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                className="p-1.5 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="block w-auto px-2 py-1 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
                 {itemsPerPageOptions.map((option) => (
                   <option key={option} value={option}>

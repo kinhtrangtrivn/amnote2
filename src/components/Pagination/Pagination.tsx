@@ -149,6 +149,14 @@ export default function Pagination({
             </div>
           </div>
           <div className="flex items-center space-x-2">
+             <button
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1}
+                className="p-1.5 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Trang đầu"
+              >
+                <ChevronsLeft size={16} />
+              </button>
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}

@@ -120,7 +120,8 @@ export default function Pagination({
         </div>
 
         {/* Desktop View */}
-        <div className="flex items-center justify-between sm:hidden">
+        <div className="hidden sm:flex sm:items-center sm:justify-between">
+          
           <div className="flex-1">
             <p className="text-sm text-gray-700">
               <span className="font-medium">{startIndex + 1}</span>

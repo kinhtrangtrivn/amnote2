@@ -1,217 +1,172 @@
-import React, { useState, useRef, useCallback, useMemo, startTransition, useDeferredValue } from 'react';
-import { FixedSizeList as List } from 'react-window';
-import { 
-  X, 
-  Printer, 
-  FileText, 
-  Download, 
-  Calendar, 
-  Building2, 
-  ZoomIn, 
-  ZoomOut 
-} from 'lucide-react';
+"use client"
+
+import { useState, useCallback, useMemo, startTransition, useDeferredValue, useEffect } from "react"
+import { X, Printer, FileText, Download, Calendar, Building2, ZoomIn, ZoomOut } from "lucide-react"
 
 interface PrintModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  data: any[];
+  isOpen: boolean
+  onClose: () => void
+  data: any[]
   companyInfo?: {
-    name: string;
-    address: string;
-    taxCode: string;
-  };
+    name: string
+    address: string
+    taxCode: string
+  }
 }
 
 interface PrintLanguage {
-  code: 'vi' | 'en' | 'ko';
-  name: string;
-  flag: string;
+  code: "vi" | "en" | "ko"
+  name: string
+  flag: string
 }
 
 interface RowData {
-  id: string;
-  code: string;
-  nameVi: string;
-  nameEn: string;
-  nameKo: string;
-  notes: string;
+  id: string
+  code: string
+  nameVi: string
+  nameEn: string
+  nameKo: string
+  notes: string
 }
 
 const languages: PrintLanguage[] = [
-  { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'ko', name: '한국어', flag: '🇰🇷' }
-];
+  { code: "vi", name: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "ko", name: "한국어", flag: "🇰🇷" },
+]
 
 const translations = {
   vi: {
-    title: 'DANH SÁCH ĐỐI TƯỢNG TẬP HỢP CHI PHÍ',
-    printDate: 'Ngày in',
+    title: "DANH SÁCH ĐỐI TƯỢNG TẬP HỢP CHI PHÍ",
+    printDate: "Ngày in",
     columns: {
-      stt: 'STT',
-      code: 'Mã đối tượng',
-      nameVi: 'Tên đối tượng (Tiếng Việt)',
-      nameEn: 'Tên đối tượng (Tiếng Anh)',
-      nameKo: 'Tên đối tượng (Tiếng Hàn)',
-      notes: 'Ghi chú'
+      stt: "STT",
+      code: "Mã đối tượng",
+      nameVi: "Tên đối tượng (Tiếng Việt)",
+      nameEn: "Tên đối tượng (Tiếng Anh)",
+      nameKo: "Tên đối tượng (Tiếng Hàn)",
+      notes: "Ghi chú",
     },
     footer: {
-      preparedBy: 'Người lập biểu',
-      accountant: 'Kế toán trưởng',
-      director: 'Giám đốc',
-      signature: '(Ký họ tên)',
-      date: 'Ngày ... tháng ... năm ...'
+      preparedBy: "Người lập biểu",
+      accountant: "Kế toán trưởng",
+      director: "Giám đốc",
+      signature: "(Ký họ tên)",
+      date: "Ngày ... tháng ... năm ...",
     },
-    summary: 'Tổng cộng có {count} đối tượng tập hợp chi phí'
+    summary: "Tổng cộng có {count} đối tượng tập hợp chi phí",
   },
   en: {
-    title: 'COST CENTER OBJECTS LIST',
-    printDate: 'Print Date',
+    title: "COST CENTER OBJECTS LIST",
+    printDate: "Print Date",
     columns: {
-      stt: 'No.',
-      code: 'Object Code',
-      nameVi: 'Object Name (Vietnamese)',
-      nameEn: 'Object Name (English)',
-      nameKo: 'Object Name (Korean)',
-      notes: 'Notes'
+      stt: "No.",
+      code: "Object Code",
+      nameVi: "Object Name (Vietnamese)",
+      nameEn: "Object Name (English)",
+      nameKo: "Object Name (Korean)",
+      notes: "Notes",
     },
     footer: {
-      preparedBy: 'Prepared by',
-      accountant: 'Chief Accountant',
-      director: 'Director',
-      signature: '(Signature)',
-      date: 'Date ... Month ... Year ...'
+      preparedBy: "Prepared by",
+      accountant: "Chief Accountant",
+      director: "Director",
+      signature: "(Signature)",
+      date: "Date ... Month ... Year ...",
     },
-    summary: 'Total: {count} cost center objects'
+    summary: "Total: {count} cost center objects",
   },
   ko: {
-    title: '비용집계 대상 목록',
-    printDate: '인쇄 날짜',
+    title: "비용집계 대상 목록",
+    printDate: "인쇄 날짜",
     columns: {
-      stt: '번호',
-      code: '대상 코드',
-      nameVi: '대상명 (베트남어)',
-      nameEn: '대상명 (영어)',
-      nameKo: '대상명 (한국어)',
-      notes: '비고'
+      stt: "번호",
+      code: "대상 코드",
+      nameVi: "대상명 (베트남어)",
+      nameEn: "대상명 (영어)",
+      nameKo: "대상명 (한국어)",
+      notes: "비고",
     },
     footer: {
-      preparedBy: '작성자',
-      accountant: '회계 책임자',
-      director: '이사',
-      signature: '(서명)',
-      date: '날짜 ... 월 ... 년 ...'
+      preparedBy: "작성자",
+      accountant: "회계 책임자",
+      director: "이사",
+      signature: "(서명)",
+      date: "날짜 ... 월 ... 년 ...",
     },
-    summary: '총 {count}개의 비용집계 대상'
-  }
-};
+    summary: "총 {count}개의 비용집계 대상",
+  },
+}
 
 // Debounce utility function
-const debounce = <T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
+const debounce = <T extends (...args: any[]) => any>(func: T, wait: number): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout
   return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-};
+    clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
+  }
+}
 
 export default function PrintModal({ isOpen, onClose, data, companyInfo }: PrintModalProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState<PrintLanguage>(languages[0]);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(100);
+  const [selectedLanguage, setSelectedLanguage] = useState<PrintLanguage>(languages[0])
+  const [isPreviewMode, setIsPreviewMode] = useState(false)
+  const [zoomLevel, setZoomLevel] = useState(100)
+  const [displayedItems, setDisplayedItems] = useState(50)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   // Use deferred value for better performance
-  const deferredData = useDeferredValue(data);
-
-  // Memoized row height for virtualization
-  const ROW_HEIGHT = 32;
-
-  // Memoized Row component for virtualization
-  const Row = React.memo<{ 
-    index: number; 
-    style: React.CSSProperties; 
-    data: RowData[] 
-  }>(({ index, style, data: rowData }) => {
-    const item = rowData[index];
-    const t = translations[selectedLanguage.code];
-    
-    return (
-      <div style={style} className="print-row">
-        <tr className="print-row">
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-center text-xs">
-            {index + 1}
-          </td>
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-xs font-medium">
-            {item.code}
-          </td>
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-            {item.nameVi}
-          </td>
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-            {item.nameEn || '-'}
-          </td>
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-            {item.nameKo || '-'}
-          </td>
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-            {item.notes || '-'}
-          </td>
-        </tr>
-      </div>
-    );
-  });
-
-  Row.displayName = 'Row';
+  const deferredData = useDeferredValue(data)
 
   // Memoized default company info
-  const defaultCompanyInfo = useMemo(() => ({
-    name: 'Công ty TNHH ABC Technology',
-    address: '123 Đường ABC, Quận Ba Đình, Hà Nội',
-    taxCode: '0123456789'
-  }), []);
+  const defaultCompanyInfo = useMemo(
+    () => ({
+      name: "Công ty TNHH ABC Technology",
+      address: "123 Đường ABC, Quận Ba Đình, Hà Nội",
+      taxCode: "0123456789",
+    }),
+    [],
+  )
 
-  const company = companyInfo || defaultCompanyInfo;
-  const t = translations[selectedLanguage.code];
-  
+  const company = companyInfo || defaultCompanyInfo
+  const t = translations[selectedLanguage.code]
+
   // Memoized current date
-  const currentDate = useMemo(() => 
-    new Date().toLocaleDateString(
-      selectedLanguage.code === 'vi' ? 'vi-VN' : 
-      selectedLanguage.code === 'en' ? 'en-US' : 'ko-KR'
-    ), [selectedLanguage.code]
-  );
+  const currentDate = useMemo(
+    () =>
+      new Date().toLocaleDateString(
+        selectedLanguage.code === "vi" ? "vi-VN" : selectedLanguage.code === "en" ? "en-US" : "ko-KR",
+      ),
+    [selectedLanguage.code],
+  )
 
   // Optimized handlers with useCallback
   const handlePrint = useCallback(() => {
-    const printElement = document.getElementById('print-content');
+    const printElement = document.getElementById("print-content")
     if (!printElement) {
-      console.error('Không tìm thấy #print-content');
-      return;
+      console.error("Không tìm thấy #print-content")
+      return
     }
-  
+
     // Tạo iframe ẩn
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
-  
-    const doc = iframe.contentWindow?.document;
-    if (!doc) return;
-  
+    const iframe = document.createElement("iframe")
+    iframe.style.position = "fixed"
+    iframe.style.right = "0"
+    iframe.style.bottom = "0"
+    iframe.style.width = "0"
+    iframe.style.height = "0"
+    iframe.style.border = "0"
+    document.body.appendChild(iframe)
+
+    const doc = iframe.contentWindow?.document
+    if (!doc) return
+
     // Lấy tất cả style hiện tại
     const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-      .map(node => node.outerHTML)
-      .join('');
-  
+      .map((node) => node.outerHTML)
+      .join("")
+
     // Viết HTML vào iframe
-    doc.open();
+    doc.open()
     doc.write(`
       <!DOCTYPE html>
       <html>
@@ -227,72 +182,397 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           ${printElement.innerHTML}
         </body>
       </html>
-    `);
-    doc.close();
-  
+    `)
+    doc.close()
+
     // Đợi nội dung load rồi in
     iframe.onload = () => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
       // Dọn dẹp iframe sau khi in
-      setTimeout(() => document.body.removeChild(iframe), 1000);
-    };
-  }, []);
+      setTimeout(() => document.body.removeChild(iframe), 1000)
+    }
+  }, [])
+
+  const handlePrintAll = useCallback(() => {
+    // Đảm bảo có dữ liệu trước khi in
+    if (!deferredData || deferredData.length === 0) {
+      alert("Không có dữ liệu để in!")
+      return
+    }
+
+    // Get current translations based on selected language
+    const currentTranslations = translations[selectedLanguage.code]
+    const currentDate = new Date().toLocaleDateString(
+      selectedLanguage.code === "vi" ? "vi-VN" : selectedLanguage.code === "en" ? "en-US" : "ko-KR",
+    )
+
+    // Tạo HTML content hoàn chỉnh
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="${selectedLanguage.code}">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Print - ${currentTranslations.title}</title>
+        <style>
+          @page { 
+            size: A4 portrait; 
+            margin: 15mm; 
+          }
+          
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Times New Roman', serif;
+            font-size: 11px;
+            line-height: 1.3;
+            color: black;
+            background: white;
+          }
+          
+          .print-content {
+            width: 100%;
+            padding: 0;
+          }
+          
+          .print-header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #1f2937;
+          }
+          
+          .print-header h1 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+          }
+          
+          .print-header p {
+            font-size: 11px;
+            margin-bottom: 4px;
+          }
+          
+          .print-title {
+            text-align: center;
+            margin-bottom: 24px;
+          }
+          
+          .print-title h2 {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+          }
+          
+          .title-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin-top: 8px;
+          }
+          
+          .print-table {
+            margin-bottom: 32px;
+            width: 100%;
+          }
+          
+          .print-table table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid black;
+          }
+          
+          .print-th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            text-align: center;
+            padding: 6px 4px;
+            border: 1px solid black;
+            font-size: 10px;
+            vertical-align: middle;
+          }
+          
+          .print-td {
+            padding: 4px;
+            border: 1px solid black;
+            vertical-align: top;
+            font-size: 10px;
+          }
+          
+          .print-td.center {
+            text-align: center;
+          }
+          
+          .print-td.bold {
+            font-weight: bold;
+          }
+          
+          .print-summary {
+            margin-bottom: 24px;
+            font-weight: bold;
+            font-size: 11px;
+          }
+          
+          .print-footer {
+            margin-top: 32px;
+            page-break-inside: avoid;
+          }
+          
+          .signature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 32px;
+          }
+          
+          .signature-item {
+            text-align: center;
+          }
+          
+          .signature-item .title {
+            font-weight: bold;
+            font-size: 11px;
+            margin-bottom: 4px;
+          }
+          
+          .signature-item .date {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 4px;
+          }
+          
+          .signature-item .note {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 64px;
+          }
+          
+          .signature-item .line {
+            border-bottom: 2px solid black;
+            width: 128px;
+            margin: 0 auto;
+          }
+          
+          /* Đảm bảo màu sắc được in */
+          * { 
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-content">
+          <!-- Header - Company Info -->
+          <div class="print-header">
+            <h1>${company.name}</h1>
+            <p><strong>Địa chỉ:</strong> ${company.address}</p>
+            <p><strong>Mã số thuế:</strong> ${company.taxCode}</p>
+          </div>
+
+          <!-- Title -->
+          <div class="print-title">
+            <h2>${currentTranslations.title}</h2>
+            <div class="title-info">
+              <span>${currentTranslations.printDate}: ${currentDate}</span>
+              <span>Trang: 1</span>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="print-table">
+            <table>
+              <thead>
+                <tr>
+                  <th class="print-th" style="width: 40px;">${currentTranslations.columns.stt}</th>
+                  <th class="print-th" style="width: 80px;">${currentTranslations.columns.code}</th>
+                  <th class="print-th">${currentTranslations.columns.nameVi}</th>
+                  <th class="print-th">${currentTranslations.columns.nameEn}</th>
+                  <th class="print-th">${currentTranslations.columns.nameKo}</th>
+                  <th class="print-th">${currentTranslations.columns.notes}</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${deferredData
+                  .map(
+                    (item, index) => `
+                  <tr>
+                    <td class="print-td center">${index + 1}</td>
+                    <td class="print-td bold">${item.code || ""}</td>
+                    <td class="print-td">${item.nameVi || ""}</td>
+                    <td class="print-td">${item.nameEn || "-"}</td>
+                    <td class="print-td">${item.nameKo || "-"}</td>
+                    <td class="print-td">${item.notes || "-"}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Summary -->
+          <div class="print-summary">
+            <p>${currentTranslations.summary.replace("{count}", deferredData.length.toString())}</p>
+          </div>
+
+          <!-- Footer - Signatures -->
+          <div class="print-footer">
+            <div class="signature-grid">
+              <div class="signature-item">
+                <div class="title">${currentTranslations.footer.preparedBy}</div>
+                <div class="date">${currentTranslations.footer.date}</div>
+                <div class="note">${currentTranslations.footer.signature}</div>
+                <div class="line"></div>
+              </div>
+              <div class="signature-item">
+                <div class="title">${currentTranslations.footer.accountant}</div>
+                <div class="date">${currentTranslations.footer.date}</div>
+                <div class="note">${currentTranslations.footer.signature}</div>
+                <div class="line"></div>
+              </div>
+              <div class="signature-item">
+                <div class="title">${currentTranslations.footer.director}</div>
+                <div class="date">${currentTranslations.footer.date}</div>
+                <div class="note">${currentTranslations.footer.signature}</div>
+                <div class="line"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `
+
+    // Tạo iframe ẩn để in
+    const iframe = document.createElement("iframe")
+    iframe.style.position = "fixed"
+    iframe.style.left = "-9999px"
+    iframe.style.top = "-9999px"
+    iframe.style.width = "1px"
+    iframe.style.height = "1px"
+    iframe.style.opacity = "0"
+    iframe.style.border = "none"
+
+    document.body.appendChild(iframe)
+
+    // Đợi iframe load xong
+    iframe.onload = () => {
+      const doc = iframe.contentWindow?.document
+      if (!doc) {
+        console.error("Không thể truy cập document của iframe")
+        document.body.removeChild(iframe)
+        return
+      }
+
+      // Viết HTML vào iframe
+      doc.open()
+      doc.write(htmlContent)
+      doc.close()
+
+      // Đợi một chút để đảm bảo nội dung được render
+      setTimeout(() => {
+        try {
+          // Focus vào iframe và in
+          iframe.contentWindow?.focus()
+          iframe.contentWindow?.print()
+
+          // Dọn dẹp sau khi in
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe)
+            }
+          }, 1000)
+        } catch (error) {
+          console.error("Lỗi khi in:", error)
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe)
+          }
+        }
+      }, 500)
+    }
+
+    // Xử lý lỗi nếu iframe không load được
+    iframe.onerror = () => {
+      console.error("Lỗi khi tải iframe")
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe)
+      }
+    }
+
+    // Đặt src để trigger load event
+    iframe.src = "about:blank"
+  }, [deferredData, company, selectedLanguage])
 
   const handleDownloadPDF = useCallback(() => {
-    alert(`Đang tải xuống PDF bằng ${selectedLanguage.name}...`);
-  }, [selectedLanguage.name]);
+    alert(`Đang tải xuống PDF bằng ${selectedLanguage.name}...`)
+  }, [selectedLanguage.name])
 
   // Debounced zoom handlers with startTransition
   const debouncedZoomIn = useMemo(
-    () => debounce(() => {
-      startTransition(() => {
-        setZoomLevel(prev => Math.min(prev + 10, 150));
-      });
-    }, 200),
-    []
-  );
+    () =>
+      debounce(() => {
+        startTransition(() => {
+          setZoomLevel((prev) => Math.min(prev + 10, 150))
+        })
+      }, 200),
+    [],
+  )
 
   const debouncedZoomOut = useMemo(
-    () => debounce(() => {
-      startTransition(() => {
-        setZoomLevel(prev => Math.max(prev - 10, 50));
-      });
-    }, 200),
-    []
-  );
+    () =>
+      debounce(() => {
+        startTransition(() => {
+          setZoomLevel((prev) => Math.max(prev - 10, 50))
+        })
+      }, 200),
+    [],
+  )
 
   const handleZoomIn = useCallback(() => {
-    debouncedZoomIn();
-  }, [debouncedZoomIn]);
+    debouncedZoomIn()
+  }, [debouncedZoomIn])
 
   const handleZoomOut = useCallback(() => {
-    debouncedZoomOut();
-  }, [debouncedZoomOut]);
+    debouncedZoomOut()
+  }, [debouncedZoomOut])
 
   const handleLanguageChange = useCallback((language: PrintLanguage) => {
     startTransition(() => {
-      setSelectedLanguage(language);
-    });
-  }, []);
+      setSelectedLanguage(language)
+    })
+  }, [])
 
   const handlePreviewModeToggle = useCallback(() => {
     startTransition(() => {
-      setIsPreviewMode(prev => !prev);
-    });
-  }, []);
+      setIsPreviewMode((prev) => !prev)
+    })
+  }, [])
+
+  const handleLoadMore = useCallback(async () => {
+    setIsLoadingMore(true)
+    // Simulate loading delay
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    setDisplayedItems((prev) => Math.min(prev + 50, deferredData.length))
+    setIsLoadingMore(false)
+  }, [deferredData.length])
 
   // Memoized PrintContent component
   const PrintContent = useMemo(() => {
-    const shouldUseVirtualization = deferredData.length > 1000;
-
     return (
       <div id="print-content" className="print-content bg-white">
         {/* Header - Company Info */}
         <div className="print-header text-center mb-8 pb-4 border-b-2 border-gray-800">
-          <h1 className="text-lg font-bold text-gray-900 mb-2 uppercase tracking-wide">
-            {company.name}
-          </h1>
+          <h1 className="text-lg font-bold text-gray-900 mb-2 uppercase tracking-wide">{company.name}</h1>
           <p className="text-sm text-gray-700 mb-1">
             <strong>Địa chỉ:</strong> {company.address}
           </p>
@@ -303,11 +583,11 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
 
         {/* Title */}
         <div className="print-title text-center mb-6">
-          <h2 className="text-base font-bold text-gray-900 uppercase mb-3 tracking-wider">
-            {t.title}
-          </h2>
+          <h2 className="text-base font-bold text-gray-900 uppercase mb-3 tracking-wider">{t.title}</h2>
           <div className="flex justify-between items-center text-sm text-gray-700">
-            <span>{t.printDate}: {currentDate}</span>
+            <span>
+              {t.printDate}: {currentDate}
+            </span>
             <span>Trang: 1</span>
           </div>
         </div>
@@ -338,44 +618,16 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
               </tr>
             </thead>
             <tbody>
-              {shouldUseVirtualization ? (
-                <tr>
-                  <td colSpan={6} className="p-0">
-                    <List
-                      height={Math.min(deferredData.length * ROW_HEIGHT, 400)}
-                      itemCount={deferredData.length}
-                      itemSize={ROW_HEIGHT}
-                      width="100%"
-                      itemData={deferredData}
-                    >
-                      {Row}
-                    </List>
-                  </td>
+              {deferredData.slice(0, displayedItems).map((item, index) => (
+                <tr key={item.id || index} className="print-row">
+                  <td className="print-td border border-gray-600 px-2 py-1.5 text-center text-xs">{index + 1}</td>
+                  <td className="print-td border border-gray-600 px-2 py-1.5 text-xs font-medium">{item.code}</td>
+                  <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">{item.nameVi}</td>
+                  <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">{item.nameEn || "-"}</td>
+                  <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">{item.nameKo || "-"}</td>
+                  <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">{item.notes || "-"}</td>
                 </tr>
-              ) : (
-                deferredData.map((item, index) => (
-                  <tr key={item.id || index} className="print-row">
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-center text-xs">
-                      {index + 1}
-                    </td>
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-xs font-medium">
-                      {item.code}
-                    </td>
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-                      {item.nameVi}
-                    </td>
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-                      {item.nameEn || '-'}
-                    </td>
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-                      {item.nameKo || '-'}
-                    </td>
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-                      {item.notes || '-'}
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
@@ -383,7 +635,8 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
         {/* Summary */}
         <div className="print-summary mb-8">
           <p className="text-sm font-medium text-gray-900">
-            {t.summary.replace('{count}', deferredData.length.toString())}
+            {t.summary.replace("{count}", displayedItems.toString())}{" "}
+            {displayedItems < deferredData.length ? `(Hiển thị ${displayedItems}/${deferredData.length})` : ""}
           </p>
         </div>
 
@@ -411,10 +664,14 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           </div>
         </div>
       </div>
-    );
-  }, [deferredData, selectedLanguage.code, company, currentDate, t]);
+    )
+  }, [deferredData, selectedLanguage.code, company, currentDate, t, displayedItems])
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setDisplayedItems(50)
+  }, [deferredData.length])
+
+  if (!isOpen) return null
 
   if (isPreviewMode) {
     return (
@@ -443,22 +700,8 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                   </button>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3">
-                <button
-                  onClick={handleDownloadPDF}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <Download size={16} />
-                  <span>Tải PDF</span>
-                </button>
-                <button
-                  onClick={handlePrint}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Printer size={16} />
-                  <span>In</span>
-                </button>
                 <button
                   onClick={handlePreviewModeToggle}
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
@@ -473,21 +716,42 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
 
         {/* Preview Content */}
         <div className="max-w-4xl mx-auto p-8">
-          <div 
+          <div
             className="bg-white shadow-2xl mx-auto print-here"
-            style={{ 
+            style={{
               transform: `scale(${zoomLevel / 100})`,
-              transformOrigin: 'top center',
-              width: '210mm',
-              minHeight: '297mm',
-              padding: '20mm'
+              transformOrigin: "top center",
+              width: "210mm",
+              minHeight: "297mm",
+              padding: "20mm",
             }}
           >
             {PrintContent}
           </div>
+          {/* Load More Button - Only in preview mode */}
+          {displayedItems < deferredData.length && (
+            <div className="text-center mt-8 no-print">
+              <button
+                onClick={handleLoadMore}
+                disabled={isLoadingMore}
+                className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mx-auto"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Đang tải...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Tải thêm 50 mục ({deferredData.length - displayedItems} còn lại)</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -506,10 +770,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                 <p className="text-sm text-gray-600">Chọn ngôn ngữ và định dạng in</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <X size={20} className="text-gray-500" />
             </button>
           </div>
@@ -518,9 +779,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           <div className="p-6 space-y-6">
             {/* Language Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Chọn ngôn ngữ in
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-3">Chọn ngôn ngữ in</label>
               <div className="grid grid-cols-1 gap-3">
                 {languages.map((language) => (
                   <button
@@ -528,17 +787,17 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                     onClick={() => handleLanguageChange(language)}
                     className={`flex items-center space-x-3 p-4 border-2 rounded-lg transition-all ${
                       selectedLanguage.code === language.code
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
                     <span className="text-2xl">{language.flag}</span>
                     <div className="flex-1 text-left">
                       <div className="font-medium text-gray-900">{language.name}</div>
                       <div className="text-sm text-gray-500">
-                        {language.code === 'vi' && 'Báo cáo bằng tiếng Việt'}
-                        {language.code === 'en' && 'Report in English'}
-                        {language.code === 'ko' && '한국어 보고서'}
+                        {language.code === "vi" && "Báo cáo bằng tiếng Việt"}
+                        {language.code === "en" && "Report in English"}
+                        {language.code === "ko" && "한국어 보고서"}
                       </div>
                     </div>
                     {selectedLanguage.code === language.code && (
@@ -553,9 +812,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
 
             {/* Print Options */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Thông tin báo cáo
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-3">Thông tin báo cáo</label>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
@@ -566,7 +823,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Calendar size={20} className="text-gray-600" />
@@ -596,14 +853,15 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                 <span className="font-medium text-blue-900">Thông tin báo cáo</span>
               </div>
               <div className="text-sm text-blue-800">
-                <p>Số lượng bản ghi: <strong>{deferredData.length}</strong></p>
-                <p>Ngôn ngữ: <strong>{selectedLanguage.name}</strong></p>
-                <p>Tiêu đề: <strong>{t.title}</strong></p>
-                {deferredData.length > 1000 && (
-                  <p className="text-orange-600 font-medium">
-                    ⚡ Sử dụng virtualization để tối ưu hiệu suất
-                  </p>
-                )}
+                <p>
+                  Số lượng bản ghi: <strong>{deferredData.length}</strong>
+                </p>
+                <p>
+                  Ngôn ngữ: <strong>{selectedLanguage.name}</strong>
+                </p>
+                <p>
+                  Tiêu đề: <strong>{t.title}</strong>
+                </p>
               </div>
             </div>
           </div>
@@ -616,7 +874,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
             >
               Hủy
             </button>
-            
+
             <div className="flex items-center space-x-3">
               <button
                 onClick={handlePreviewModeToggle}
@@ -625,7 +883,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                 <FileText size={16} />
                 <span>Xem trước</span>
               </button>
-              
+
               <button
                 onClick={handleDownloadPDF}
                 className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -633,12 +891,9 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                 <Download size={16} />
                 <span>Tải PDF</span>
               </button>
-              
+
               <button
-                onClick={() => {
-                  handlePreviewModeToggle();
-                  setTimeout(handlePrint, 100);
-                }}
+                onClick={handlePrintAll}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Printer size={16} />
@@ -668,9 +923,25 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           #print-content * {
             visibility: visible !important;
           }
+
+          #temp-print-content,
+          #temp-print-content * {
+            visibility: visible !important;
+          }
           
           /* Đặt lại vị trí và kích thước cho nội dung in */
           #print-content {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 15mm !important;
+            font-family: 'Times New Roman', serif !important;
+            background: white !important;
+          }
+
+          #temp-print-content {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
@@ -695,6 +966,12 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           
           /* Styling chi tiết cho bảng in */
           .print-content {
+            font-size: 11px !important;
+            line-height: 1.3 !important;
+            color: black !important;
+          }
+
+          #temp-print-content {
             font-size: 11px !important;
             line-height: 1.3 !important;
             color: black !important;
@@ -768,5 +1045,5 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
         }
       `}</style>
     </>
-  );
+  )
 }

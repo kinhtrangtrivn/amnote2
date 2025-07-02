@@ -1,15 +1,5 @@
-import React, { useState, useRef, useCallback, useMemo, startTransition, useDeferredValue } from 'react';
-import { FixedSizeList as List } from 'react-window';
-import { 
-  X, 
-  Printer,  
-  FileText, 
-  Download, 
-  Calendar, 
-  Building2, 
-  ZoomIn, 
-  ZoomOut 
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Printer, FileText, Download, Calendar, Building2, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface PrintModalProps {
   isOpen: boolean;
@@ -26,15 +16,6 @@ interface PrintLanguage {
   code: 'vi' | 'en' | 'ko';
   name: string;
   flag: string;
-}
-
-interface RowData {
-  id: string;
-  code: string;
-  nameVi: string;
-  nameEn: string;
-  nameKo: string;
-  notes: string;
 }
 
 const languages: PrintLanguage[] = [
@@ -106,86 +87,27 @@ const translations = {
   }
 };
 
-// Debounce utility function
-const debounce = <T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-};
-
 export default function PrintModal({ isOpen, onClose, data, companyInfo }: PrintModalProps) {
   const [selectedLanguage, setSelectedLanguage] = useState<PrintLanguage>(languages[0]);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100);
 
-  // Use deferred value for better performance
-  const deferredData = useDeferredValue(data);
+  if (!isOpen) return null;
 
-  // Memoized row height for virtualization
-  const ROW_HEIGHT = 32;
-
-  // Memoized Row component for virtualization
-  const Row = React.memo<{ 
-    index: number; 
-    style: React.CSSProperties; 
-    data: RowData[] 
-  }>(({ index, style, data: rowData }) => {
-    const item = rowData[index];
-    const t = translations[selectedLanguage.code];
-    
-    return (
-      <div style={style} className="print-row">
-        <tr className="print-row">
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-center text-xs">
-            {index + 1}
-          </td>
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-xs font-medium">
-            {item.code}
-          </td>
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-            {item.nameVi}
-          </td>
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-            {item.nameEn || '-'}
-          </td>
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-            {item.nameKo || '-'}
-          </td>
-          <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-            {item.notes || '-'}
-          </td>
-        </tr>
-      </div>
-    );
-  });
-
-  Row.displayName = 'Row';
-
-  // Memoized default company info
-  const defaultCompanyInfo = useMemo(() => ({
+  const defaultCompanyInfo = {
     name: 'Công ty TNHH ABC Technology',
     address: '123 Đường ABC, Quận Ba Đình, Hà Nội',
     taxCode: '0123456789'
-  }), []);
+  };
 
   const company = companyInfo || defaultCompanyInfo;
   const t = translations[selectedLanguage.code];
-  
-  // Memoized current date
-  const currentDate = useMemo(() => 
-    new Date().toLocaleDateString(
-      selectedLanguage.code === 'vi' ? 'vi-VN' : 
-      selectedLanguage.code === 'en' ? 'en-US' : 'ko-KR'
-    ), [selectedLanguage.code]
+  const currentDate = new Date().toLocaleDateString(
+    selectedLanguage.code === 'vi' ? 'vi-VN' : 
+    selectedLanguage.code === 'en' ? 'en-US' : 'ko-KR'
   );
 
-  // Optimized handlers with useCallback
-  const handlePrint = useCallback(() => {
+  const handlePrint = () => {
     const printElement = document.getElementById('print-content');
     if (!printElement) {
       console.error('Không tìm thấy #print-content');
@@ -237,184 +159,131 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
       // Dọn dẹp iframe sau khi in
       setTimeout(() => document.body.removeChild(iframe), 1000);
     };
-  }, []);
+  };
 
-  const handleDownloadPDF = useCallback(() => {
+
+  const handleDownloadPDF = () => {
     alert(`Đang tải xuống PDF bằng ${selectedLanguage.name}...`);
-  }, [selectedLanguage.name]);
+  };
 
-  // Debounced zoom handlers with startTransition
-  const debouncedZoomIn = useMemo(
-    () => debounce(() => {
-      startTransition(() => {
-        setZoomLevel(prev => Math.min(prev + 10, 150));
-      });
-    }, 200),
-    []
-  );
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 10, 150));
+  };
 
-  const debouncedZoomOut = useMemo(
-    () => debounce(() => {
-      startTransition(() => {
-        setZoomLevel(prev => Math.max(prev - 10, 50));
-      });
-    }, 200),
-    []
-  );
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 10, 50));
+  };
 
-  const handleZoomIn = useCallback(() => {
-    debouncedZoomIn();
-  }, [debouncedZoomIn]);
+  const PrintContent = () => (
+    <div id="print-content" className="print-content bg-white">
+      {/* Header - Company Info */}
+      <div className="print-header text-center mb-8 pb-4 border-b-2 border-gray-800">
+        <h1 className="text-lg font-bold text-gray-900 mb-2 uppercase tracking-wide">
+          {company.name}
+        </h1>
+        <p className="text-sm text-gray-700 mb-1">
+          <strong>Địa chỉ:</strong> {company.address}
+        </p>
+        <p className="text-sm text-gray-700">
+          <strong>Mã số thuế:</strong> {company.taxCode}
+        </p>
+      </div>
 
-  const handleZoomOut = useCallback(() => {
-    debouncedZoomOut();
-  }, [debouncedZoomOut]);
-
-  const handleLanguageChange = useCallback((language: PrintLanguage) => {
-    startTransition(() => {
-      setSelectedLanguage(language);
-    });
-  }, []);
-
-  const handlePreviewModeToggle = useCallback(() => {
-    startTransition(() => {
-      setIsPreviewMode(prev => !prev);
-    });
-  }, []);
-
-  // Memoized PrintContent component
-  const PrintContent = useMemo(() => {
-    const shouldUseVirtualization = deferredData.length > 1000;
-
-    return (
-      <div id="print-content" className="print-content bg-white">
-        {/* Header - Company Info */}
-        <div className="print-header text-center mb-8 pb-4 border-b-2 border-gray-800">
-          <h1 className="text-lg font-bold text-gray-900 mb-2 uppercase tracking-wide">
-            {company.name}
-          </h1>
-          <p className="text-sm text-gray-700 mb-1">
-            <strong>Địa chỉ:</strong> {company.address}
-          </p>
-          <p className="text-sm text-gray-700">
-            <strong>Mã số thuế:</strong> {company.taxCode}
-          </p>
+      {/* Title */}
+      <div className="print-title text-center mb-6">
+        <h2 className="text-base font-bold text-gray-900 uppercase mb-3 tracking-wider">
+          {t.title}
+        </h2>
+        <div className="flex justify-between items-center text-sm text-gray-700">
+          <span>{t.printDate}: {currentDate}</span>
+          <span>Trang: 1</span>
         </div>
+      </div>
 
-        {/* Title */}
-        <div className="print-title text-center mb-6">
-          <h2 className="text-base font-bold text-gray-900 uppercase mb-3 tracking-wider">
-            {t.title}
-          </h2>
-          <div className="flex justify-between items-center text-sm text-gray-700">
-            <span>{t.printDate}: {currentDate}</span>
-            <span>Trang: 1</span>
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="print-table mb-8 preview-container">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100 w-12">
-                  {t.columns.stt}
-                </th>
-                <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100 w-24">
-                  {t.columns.code}
-                </th>
-                <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
-                  {t.columns.nameVi}
-                </th>
-                <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
-                  {t.columns.nameEn}
-                </th>
-                <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
-                  {t.columns.nameKo}
-                </th>
-                <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
-                  {t.columns.notes}
-                </th>
+      {/* Table */}
+      <div className="print-table mb-8">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr>
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100 w-12">
+                {t.columns.stt}
+              </th>
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100 w-24">
+                {t.columns.code}
+              </th>
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
+                {t.columns.nameVi}
+              </th>
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
+                {t.columns.nameEn}
+              </th>
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
+                {t.columns.nameKo}
+              </th>
+              <th className="print-th border-2 border-gray-800 px-2 py-2 text-center text-xs font-bold bg-gray-100">
+                {t.columns.notes}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((item, index) => (
+              <tr key={item.id || index} className="print-row">
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-center text-xs">
+                  {index + 1}
+                </td>
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-xs font-medium">
+                  {item.code}
+                </td>
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                  {item.nameVi}
+                </td>
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                  {item.nameEn || '-'}
+                </td>
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                  {item.nameKo || '-'}
+                </td>
+                <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
+                  {item.notes || '-'}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {shouldUseVirtualization ? (
-                <tr>
-                  <td colSpan={6} className="p-0">
-                    <List
-                      height={Math.min(deferredData.length * ROW_HEIGHT, 400)}
-                      itemCount={deferredData.length}
-                      itemSize={ROW_HEIGHT}
-                      width="100%"
-                      itemData={deferredData}
-                    >
-                      {Row}
-                    </List>
-                  </td>
-                </tr>
-              ) : (
-                deferredData.map((item, index) => (
-                  <tr key={item.id || index} className="print-row">
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-center text-xs">
-                      {index + 1}
-                    </td>
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-xs font-medium">
-                      {item.code}
-                    </td>
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-                      {item.nameVi}
-                    </td>
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-                      {item.nameEn || '-'}
-                    </td>
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-                      {item.nameKo || '-'}
-                    </td>
-                    <td className="print-td border border-gray-600 px-2 py-1.5 text-xs">
-                      {item.notes || '-'}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-        {/* Summary */}
-        <div className="print-summary mb-8">
-          <p className="text-sm font-medium text-gray-900">
-            {t.summary.replace('{count}', deferredData.length.toString())}
-          </p>
-        </div>
+      {/* Summary */}
+      <div className="print-summary mb-8">
+        <p className="text-sm font-medium text-gray-900">
+          {t.summary.replace('{count}', data.length.toString())}
+        </p>
+      </div>
 
-        {/* Footer - Signatures */}
-        <div className="print-footer">
-          <div className="grid grid-cols-3 gap-8 mt-12">
-            <div className="text-center">
-              <p className="font-bold text-sm mb-1">{t.footer.preparedBy}</p>
-              <p className="text-xs text-gray-600 mb-1">{t.footer.date}</p>
-              <p className="text-xs text-gray-600 mb-16">{t.footer.signature}</p>
-              <div className="border-b-2 border-gray-800 w-32 mx-auto"></div>
-            </div>
-            <div className="text-center">
-              <p className="font-bold text-sm mb-1">{t.footer.accountant}</p>
-              <p className="text-xs text-gray-600 mb-1">{t.footer.date}</p>
-              <p className="text-xs text-gray-600 mb-16">{t.footer.signature}</p>
-              <div className="border-b-2 border-gray-800 w-32 mx-auto"></div>
-            </div>
-            <div className="text-center">
-              <p className="font-bold text-sm mb-1">{t.footer.director}</p>
-              <p className="text-xs text-gray-600 mb-1">{t.footer.date}</p>
-              <p className="text-xs text-gray-600 mb-16">{t.footer.signature}</p>
-              <div className="border-b-2 border-gray-800 w-32 mx-auto"></div>
-            </div>
+      {/* Footer - Signatures */}
+      <div className="print-footer">
+        <div className="grid grid-cols-3 gap-8 mt-12">
+          <div className="text-center">
+            <p className="font-bold text-sm mb-1">{t.footer.preparedBy}</p>
+            <p className="text-xs text-gray-600 mb-1">{t.footer.date}</p>
+            <p className="text-xs text-gray-600 mb-16">{t.footer.signature}</p>
+            <div className="border-b-2 border-gray-800 w-32 mx-auto"></div>
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-sm mb-1">{t.footer.accountant}</p>
+            <p className="text-xs text-gray-600 mb-1">{t.footer.date}</p>
+            <p className="text-xs text-gray-600 mb-16">{t.footer.signature}</p>
+            <div className="border-b-2 border-gray-800 w-32 mx-auto"></div>
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-sm mb-1">{t.footer.director}</p>
+            <p className="text-xs text-gray-600 mb-1">{t.footer.date}</p>
+            <p className="text-xs text-gray-600 mb-16">{t.footer.signature}</p>
+            <div className="border-b-2 border-gray-800 w-32 mx-auto"></div>
           </div>
         </div>
       </div>
-    );
-  }, [deferredData, selectedLanguage.code, company, currentDate, t]);
-
-  if (!isOpen) return null;
+    </div>
+  );
 
   if (isPreviewMode) {
     return (
@@ -460,7 +329,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                   <span>In</span>
                 </button>
                 <button
-                  onClick={handlePreviewModeToggle}
+                  onClick={() => setIsPreviewMode(false)}
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                 >
                   <X size={16} />
@@ -483,7 +352,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
               padding: '20mm'
             }}
           >
-            {PrintContent}
+            <PrintContent />
           </div>
         </div>
       </div>
@@ -525,7 +394,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                 {languages.map((language) => (
                   <button
                     key={language.code}
-                    onClick={() => handleLanguageChange(language)}
+                    onClick={() => setSelectedLanguage(language)}
                     className={`flex items-center space-x-3 p-4 border-2 rounded-lg transition-all ${
                       selectedLanguage.code === language.code
                         ? 'border-blue-500 bg-blue-50'
@@ -596,14 +465,9 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                 <span className="font-medium text-blue-900">Thông tin báo cáo</span>
               </div>
               <div className="text-sm text-blue-800">
-                <p>Số lượng bản ghi: <strong>{deferredData.length}</strong></p>
+                <p>Số lượng bản ghi: <strong>{data.length}</strong></p>
                 <p>Ngôn ngữ: <strong>{selectedLanguage.name}</strong></p>
                 <p>Tiêu đề: <strong>{t.title}</strong></p>
-                {deferredData.length > 1000 && (
-                  <p className="text-orange-600 font-medium">
-                    ⚡ Sử dụng virtualization để tối ưu hiệu suất
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -619,7 +483,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
             
             <div className="flex items-center space-x-3">
               <button
-                onClick={handlePreviewModeToggle}
+                onClick={() => setIsPreviewMode(true)}
                 className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
                 <FileText size={16} />
@@ -636,7 +500,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
               
               <button
                 onClick={() => {
-                  handlePreviewModeToggle();
+                  setIsPreviewMode(true);
                   setTimeout(handlePrint, 100);
                 }}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -651,12 +515,6 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
 
       {/* Print Styles - CHỈ IN PHẦN PRINT-CONTENT */}
       <style jsx global>{`
-        /* CSS isolation cho container preview */
-        .preview-container {
-          contain: layout paint;
-          overflow-y: auto;
-        }
-
         @media print {
           /* Ẩn tất cả các thành phần */
           * {
@@ -749,7 +607,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
           }
           
           /* Đảm bảo màu sắc được in */
-          * { 
+          * {
             -webkit-print-color-adjust: exact !important;
             color-adjust: exact !important;
           }
@@ -763,7 +621,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
         
         /* Styles cho preview mode */
         .print-content {
-          font-family: 'Times New Roman', serif;
+          font-family: 'Times New Roman', serif; 
           line-height: 1.4;
         }
       `}</style>

@@ -392,28 +392,45 @@ const CostObjectPage: React.FC = () => {
       return
     }
 
-    // Kiểm tra từng đối tượng được chọn xem có con hay không
-    const itemsWithChildren: string[] = []
+    // Kiểm tra từng đối tượng được chọn
+    const itemsWithUnselectedChildren: string[] = []
     const itemsCanDelete: string[] = []
 
     selectedItems.forEach((id) => {
       const item = doiTuongList.find((x) => x.id === id)
       if (item) {
         if (hasChildren(id)) {
-          itemsWithChildren.push(`${item.code} - ${item.nameVi}`)
+          // Lấy tất cả các con trực tiếp của đối tượng này
+          const directChildren = doiTuongList.filter((child) => child.parentObject === id)
+          const allChildrenSelected = directChildren.every((child) => selectedItems.includes(child.id))
+
+          if (allChildrenSelected) {
+            // Tất cả con đã được chọn, có thể xóa cha
+            itemsCanDelete.push(`${item.code} - ${item.nameVi}`)
+          } else {
+            // Có con chưa được chọn, không thể xóa cha
+            const unselectedChildren = directChildren.filter((child) => !selectedItems.includes(child.id))
+            itemsWithUnselectedChildren.push(
+              `${item.code} - ${item.nameVi} (còn ${unselectedChildren.length} con chưa chọn)`,
+            )
+          }
         } else {
+          // Không có con, có thể xóa
           itemsCanDelete.push(`${item.code} - ${item.nameVi}`)
         }
       }
     })
 
-    // Nếu có đối tượng có con, thông báo lỗi
-    if (itemsWithChildren.length > 0) {
-      const itemsList = itemsWithChildren.slice(0, 5).join("\n")
-      const moreItems = itemsWithChildren.length > 5 ? `\n... và ${itemsWithChildren.length - 5} đối tượng khác` : ""
+    // Nếu có đối tượng cha có con chưa được chọn, thông báo lỗi
+    if (itemsWithUnselectedChildren.length > 0) {
+      const itemsList = itemsWithUnselectedChildren.slice(0, 5).join("\n")
+      const moreItems =
+        itemsWithUnselectedChildren.length > 5
+          ? `\n... và ${itemsWithUnselectedChildren.length - 5} đối tượng khác`
+          : ""
 
       alert(
-        `Không thể xóa ${itemsWithChildren.length} đối tượng sau vì chúng có đối tượng con:\n\n${itemsList}${moreItems}\n\nVui lòng xóa tất cả các đối tượng con trước khi xóa đối tượng cha.`,
+        `Không thể xóa ${itemsWithUnselectedChildren.length} đối tượng sau vì chúng có đối tượng con chưa được chọn:\n\n${itemsList}${moreItems}\n\nVui lòng chọn tất cả các đối tượng con trước khi xóa đối tượng cha, hoặc bỏ chọn đối tượng cha.`,
       )
       return
     }

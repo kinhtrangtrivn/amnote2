@@ -110,7 +110,7 @@ const CostObjectPage: React.FC = () => {
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
   const [showPrintMenu, setShowPrintMenu] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(50); 
 
   // Hover state for rows
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);

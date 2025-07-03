@@ -273,7 +273,7 @@ export default function ExcelImportModal({ isOpen, onClose, onImport }: ExcelImp
       <React.Fragment key={step}>
         <div
           className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-            currentStep >= step ? 'bg-white text-red-600 ' : 'bg-white text-gray-400'
+            currentStep >= step ? 'bg-red-600  text-white' : 'bg-white text-gray-400'
           }`}
         >
           {currentStep > step ? <CheckCircle size={16} /> : step}

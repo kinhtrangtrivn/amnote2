@@ -103,7 +103,6 @@ export default function Pagination({
               className="p-1.5 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeft size={16} />
-              <span className="sr-only">Trang trước</span>
             </button>
             <span className="text-sm text-gray-700 px-2">
               {currentPage} / {totalPages}
@@ -114,7 +113,6 @@ export default function Pagination({
               className="p-1.5 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronRight size={16} />
-              <span className="sr-only">Trang sau</span>
             </button>
           </div>
         </div>

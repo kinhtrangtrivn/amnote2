@@ -881,7 +881,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                 className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
                 <FileText size={16} />
-                <span>Xem trước</span>
+                <span class="hidden sm:block ">Xem trước</span>
               </button>
 
               <button
@@ -889,7 +889,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                 className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 <Download size={16} />
-                <span>Tải PDF</span>
+                <span class="hidden sm:block ">Tải PDF</span>
               </button>
 
               <button
@@ -897,7 +897,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Printer size={16} />
-                <span>In ngay</span>
+                <span class="hidden sm:block ">In ngay</span>
               </button>
             </div>
           </div>

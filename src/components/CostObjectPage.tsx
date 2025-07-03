@@ -17,7 +17,7 @@ interface DoiTuongTapHopChiPhi {
   nameVi: string
   nameEn: string
   nameKo: string
-  parentObject: string // id cha hoặc '0' nếu root
+  parentObject: string // id cha hoặc '' nếu root
   notes: string
   createdDate: string
   status: "active" | "inactive"
@@ -311,7 +311,10 @@ const CostObjectPage: React.FC = () => {
   }, [filteredData])
 
   // Tối ưu: Memoize root items
-  const rootItems = useMemo(() => filteredData.filter((item) => item.parentObject === "0"), [filteredData])
+  const rootItems = useMemo(
+    () => filteredData.filter((item) => !item.parentObject || item.parentObject === "0"),
+    [filteredData],
+  )
 
   // Tối ưu: Memoize flattened tree structure
   interface Flattened {
@@ -348,7 +351,7 @@ const CostObjectPage: React.FC = () => {
   // Hàm để tìm tất cả các con của một đối tượng (đệ quy)
   const getAllChildren = useCallback((parentId: string, items: DoiTuongTapHopChiPhi[]): string[] => {
     const children: string[] = []
-    const directChildren = items.filter((item) => item.parentObject === parentId)
+    const directChildren = items.filter((item) => item.parentObject === parentId && item.parentObject !== "0")
 
     directChildren.forEach((child) => {
       children.push(child.id)
@@ -361,7 +364,7 @@ const CostObjectPage: React.FC = () => {
   // Hàm kiểm tra xem đối tượng có con hay không
   const hasChildren = useCallback(
     (parentId: string): boolean => {
-      return doiTuongList.some((item) => item.parentObject === parentId)
+      return doiTuongList.some((item) => item.parentObject === parentId && item.parentObject !== "0")
     },
     [doiTuongList],
   )
@@ -369,7 +372,7 @@ const CostObjectPage: React.FC = () => {
   // Hàm lấy danh sách tên các đối tượng con
   const getChildrenNames = useCallback(
     (parentId: string): string[] => {
-      const directChildren = doiTuongList.filter((item) => item.parentObject === parentId)
+      const directChildren = doiTuongList.filter((item) => item.parentObject === parentId && item.parentObject !== "0")
       return directChildren.map((child) => `${child.code} - ${child.nameVi}`)
     },
     [doiTuongList],
@@ -817,6 +820,17 @@ const CostObjectPage: React.FC = () => {
                               {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
                             </span>
                           </div>
+                        ) : col.dataField === "parentObject" ? (
+                          <span className="text-sm text-gray-600">
+                            {item.parentObject === "0" || !item.parentObject ? (
+                              <span className="text-gray-400 italic">Không có cha</span>
+                            ) : (
+                              (() => {
+                                const parent = doiTuongList.find((p) => p.id === item.parentObject)
+                                return parent ? `${parent.code} - ${parent.nameVi}` : item.parentObject
+                              })()
+                            )}
+                          </span>
                         ) : col.dataField === "notes" ? (
                           <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
                             {item.notes}

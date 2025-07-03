@@ -872,7 +872,7 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
               onClick={onClose}
               className="flex items-center px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <X size={20} className="text-gray-500" />
+              <X size={16} className="text-gray-500" />
                <span class="hidden sm:block ">Hủy</span>
             </button>
 

@@ -17,7 +17,7 @@ interface DoiTuongTapHopChiPhi {
   nameVi: string
   nameEn: string
   nameKo: string
-  parentObject: string // id cha hoặc '' nếu root
+  parentObject: string // id cha hoặc '0' nếu root
   notes: string
   createdDate: string
   status: "active" | "inactive"
@@ -41,7 +41,7 @@ const generateMockData = (count: number): DoiTuongTapHopChiPhi[] => {
 
   for (let i = 1; i <= count; i++) {
     const isParent = i <= Math.floor(count * 0.3) // 30% là parent
-    const parentId = isParent ? "" : Math.floor(Math.random() * Math.floor(count * 0.3) + 1).toString()
+    const parentId = isParent ? "0" : Math.floor(Math.random() * Math.floor(count * 0.3) + 1).toString()
 
     data.push({
       id: i.toString(),
@@ -93,7 +93,7 @@ const CostObjectPage: React.FC = () => {
           nameVi: row.nameVi,
           nameEn: row.nameEn || "",
           nameKo: row.nameKo || "",
-          parentObject: row.parentObject || "",
+          parentObject: row.parentObject || "0",
           notes: row.notes || "",
           createdDate: new Date().toISOString().split("T")[0],
           status: "active" as const,
@@ -135,7 +135,7 @@ const CostObjectPage: React.FC = () => {
           nameVi: row.nameVi,
           nameEn: row.nameEn || "",
           nameKo: row.nameKo || "",
-          parentObject: row.parentObject || "",
+          parentObject: row.parentObject || "0",
           notes: row.notes || "",
           createdDate: new Date().toISOString().split("T")[0],
           status: "active" as const,
@@ -168,7 +168,7 @@ const CostObjectPage: React.FC = () => {
     nameVi: "",
     nameEn: "",
     nameKo: "",
-    parentObject: "",
+    parentObject: "0",
     notes: "",
   })
 
@@ -302,7 +302,7 @@ const CostObjectPage: React.FC = () => {
   const childrenMap = useMemo(() => {
     const map: Record<string, DoiTuongTapHopChiPhi[]> = {}
     filteredData.forEach((item) => {
-      if (item.parentObject) {
+      if (item.parentObject && item.parentObject !== "0") {
         map[item.parentObject] = map[item.parentObject] || []
         map[item.parentObject].push(item)
       }
@@ -311,7 +311,7 @@ const CostObjectPage: React.FC = () => {
   }, [filteredData])
 
   // Tối ưu: Memoize root items
-  const rootItems = useMemo(() => filteredData.filter((item) => !item.parentObject), [filteredData])
+  const rootItems = useMemo(() => filteredData.filter((item) => item.parentObject === "0"), [filteredData])
 
   // Tối ưu: Memoize flattened tree structure
   interface Flattened {
@@ -378,7 +378,7 @@ const CostObjectPage: React.FC = () => {
   // --- CRUD Handlers ---
   const handleAdd = useCallback(() => {
     setEditingItem(null)
-    setFormData({ code: "", nameVi: "", nameEn: "", nameKo: "", parentObject: "", notes: "" })
+    setFormData({ code: "", nameVi: "", nameEn: "", nameKo: "", parentObject: "0", notes: "" })
     setIsModalOpen(true)
   }, [])
 
@@ -872,7 +872,7 @@ const CostObjectPage: React.FC = () => {
           {filteredData.length === 0 && (
             <div className="text-center py-8">
               <Icons.Building2 size={48} className="mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500">Không tìm thấy dữ liệu n��o</p>
+              <p className="text-gray-500">Không tìm thấy dữ liệu nào</p>
             </div>
           )}
         </div>
@@ -1113,7 +1113,7 @@ const CostObjectPage: React.FC = () => {
                     onChange={(e) => setFormData((d) => ({ ...d, parentObject: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                   >
-                    <option value="">Không có cha</option>
+                    <option value="0">Không có cha</option>
                     {getValidParentOptions.map((opt) => (
                       <option key={opt.id} value={opt.id}>
                         {opt.code} – {opt.nameVi}

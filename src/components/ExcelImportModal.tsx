@@ -21,7 +21,7 @@ import {
 interface ExcelImportModalProps {
   isOpen: boolean
   onClose: () => void
-  onImport: (data: any[]) => void
+  onImport: (data: any[], method: "add" | "update" | "overwrite") => void
   existingData?: any[] // Thêm prop để truyền dữ liệu hiện có
 }
 
@@ -568,13 +568,16 @@ export default function ExcelImportModal({ isOpen, onClose, onImport, existingDa
     }
 
     console.log("Importing data:", selectedData)
+    console.log("Import method:", importMethod)
 
-    // Call the onImport function with the selected data
-    onImport(selectedData)
+    // Call the onImport function with the selected data and import method
+    onImport(selectedData, importMethod)
     resetState()
     onClose()
-    alert(`Đã nhập thành công ${selectedData.length} bản ghi!`)
-  }, [validationResults, selectedRows, onImport, resetState, onClose])
+    alert(
+      `Đã ${importMethod === "add" ? "thêm mới" : importMethod === "update" ? "cập nhật" : "ghi đè"} thành công ${selectedData.length} bản ghi!`,
+    )
+  }, [validationResults, selectedRows, onImport, importMethod, resetState, onClose])
 
   const handleClose = useCallback(() => {
     if (currentStep > 1) {

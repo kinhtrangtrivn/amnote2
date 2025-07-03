@@ -52,7 +52,7 @@ const COLUMN_MAPPINGS: ColumnMapping[] = [
     softwareColumn: "parentObject",
     excelColumn: "",
     required: false,
-    description: "ID đối tượng gốc - số nguyên (tùy chọn, để trống nếu không có cha)",
+    description: "ID đối tượng gốc - số nguyên (tùy chọn, để trống hoặc 0 nếu không có cha)",
   },
   { softwareColumn: "notes", excelColumn: "", required: false, description: "Ghi chú (tùy chọn)" },
 ]
@@ -221,9 +221,9 @@ export default function ExcelImportModal({ isOpen, onClose, onImport, existingDa
       "Ghi chú",
     ]
     const sampleData = [
-      ["CC001", "Phòng Sản Xuất", "Production Dept", "생산부", "", "Bộ phận sản xuất chính"],
+      ["CC001", "Phòng Sản Xuất", "Production Dept", "생산부", "0", "Bộ phận sản xuất chính"],
       ["CC002", "Phòng Marketing", "Marketing Dept", "마케팅부", "1", "Bộ phận marketing - con của CC001"],
-      ["CC003", "Phòng Kế Toán", "Accounting Dept", "회계부", "", "Bộ phận kế toán"],
+      ["CC003", "Phòng Kế Toán", "Accounting Dept", "회계부", "0", "Bộ phận kế toán"],
       ["CC004", "Team A Marketing", "Marketing Team A", "마케팅 A팀", "2", "Team con của Marketing"],
     ]
 
@@ -246,12 +246,12 @@ export default function ExcelImportModal({ isOpen, onClose, onImport, existingDa
       ["HƯỚNG DẪN NHẬP DỮ LIỆU"],
       [""],
       ['Cột "ID đối tượng gốc":'],
-      ["- Để trống: đối tượng không có cha (hợp lệ)"],
+      ["- Để trống hoặc nhập 0: đối tượng không có cha (hợp lệ)"],
       ["- Nhập số: ID của đối tượng cha (phải tồn tại trong hệ thống)"],
       ["- Không được nhập chữ"],
       [""],
       ["Ví dụ:"],
-      ["- CC001: không có cha (để trống cột ID đối tượng gốc)"],
+      ["- CC001: không có cha (để trống hoặc nhập 0 vào cột ID đối tượng gốc)"],
       ["- CC002: có cha là CC001 (nhập ID của CC001 vào cột ID đối tượng gốc)"],
       [""],
       ["Lưu ý: ID đối tượng gốc phải là số nguyên và tồn tại trong danh sách đối tượng hiện có"],
@@ -384,8 +384,9 @@ export default function ExcelImportModal({ isOpen, onClose, onImport, existingDa
                   `ID đối tượng gốc phải là số nguyên, không được nhập chữ (giá trị hiện tại: "${parentValue}")`,
                 )
               } else {
-                // Check if the ID exists in the system
-                if (!existingIds.has(parentValue)) {
+                // Convert to number and check if it's 0 (no parent) or exists in system
+                const parentId = parentValue
+                if (parentId !== "0" && !existingIds.has(parentId)) {
                   errors.push(`ID đối tượng gốc "${parentValue}" không tồn tại trong hệ thống`)
                 }
               }
@@ -394,6 +395,15 @@ export default function ExcelImportModal({ isOpen, onClose, onImport, existingDa
             errors.push(`Cột "${mapping.softwareColumn}" chưa được ghép với cột Excel`)
           }
         })
+
+        // Normalize parentObject: empty or "0" becomes "0"
+        if (
+          !mappedData.parentObject ||
+          String(mappedData.parentObject).trim() === "" ||
+          String(mappedData.parentObject).trim() === "0"
+        ) {
+          mappedData.parentObject = "0"
+        }
 
         // Additional validations based on import method
         if (mappedData.code && String(mappedData.code).trim()) {
@@ -919,7 +929,7 @@ export default function ExcelImportModal({ isOpen, onClose, onImport, existingDa
                             {mapping.description}
                             {mapping.softwareColumn === "parentObject" && (
                               <div className="mt-1 text-xs text-blue-600">
-                                <strong>Lưu ý:</strong> Để trống = không có cha, nhập số = ID đối tượng cha
+                                <strong>Lưu ý:</strong> Để trống hoặc nhập 0 = không có cha, nhập số = ID đối tượng cha
                               </div>
                             )}
                           </div>
@@ -937,7 +947,7 @@ export default function ExcelImportModal({ isOpen, onClose, onImport, existingDa
                     <p className="font-medium mb-1">Lưu ý quan trọng về cột "ID đối tượng gốc":</p>
                     <ul className="list-disc list-inside space-y-1">
                       <li>
-                        <strong>Để trống:</strong> Đối tượng không có cha (hợp lệ)
+                        <strong>Để trống hoặc nhập 0:</strong> Đối tượng không có cha (hợp lệ)
                       </li>
                       <li>
                         <strong>Nhập số:</strong> ID của đối tượng cha (phải tồn tại trong hệ thống)
@@ -1172,7 +1182,11 @@ export default function ExcelImportModal({ isOpen, onClose, onImport, existingDa
                               className="px-4 py-4 text-sm text-gray-900 truncate"
                               title={result.data.parentObject || ""}
                             >
-                              {result.data.parentObject || <span className="text-gray-400 italic">trống</span>}
+                              {result.data.parentObject === "0" ? (
+                                <span className="text-gray-400 italic">không có cha</span>
+                              ) : (
+                                result.data.parentObject || ""
+                              )}
                             </td>
                             <td className="px-4 py-4 text-sm text-gray-900 truncate" title={result.data.notes || ""}>
                               {result.data.notes || ""}
@@ -1283,3 +1297,4 @@ export default function ExcelImportModal({ isOpen, onClose, onImport, existingDa
     </div>
   )
 }
+ 

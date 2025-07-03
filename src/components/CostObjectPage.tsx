@@ -1,82 +1,77 @@
-"use client"
-
 // CostObjectPage.tsx
 
-import type React from "react"
-import { useState, useEffect, useMemo, useCallback } from "react"
-import * as Icons from "lucide-react"
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import * as Icons from 'lucide-react';
 
-import ExcelImportModal from "./ExcelImportModal"
-import PrintModal from "./PrintModal"
-import Pagination from "./Pagination/Pagination"
+import ExcelImportModal from './ExcelImportModal';
+import PrintModal from './PrintModal';
+import Pagination from './Pagination';
 
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
-  id: string
-  code: string
-  nameVi: string
-  nameEn: string
-  nameKo: string
-  parentObject: string // id cha hoặc '' nếu root
-  notes: string
-  createdDate: string
-  status: "active" | "inactive"
+  id: string;
+  code: string;
+  nameVi: string;
+  nameEn: string;
+  nameKo: string;
+  parentObject: string; // id cha hoặc '' nếu root
+  notes: string;
+  createdDate: string;
+  status: 'active' | 'inactive';
 }
 
 interface ColumnConfig {
-  id: string
-  dataField: string
-  displayName: string
-  width: number
-  visible: boolean
-  pinned: boolean
-  originalOrder: number
+  id: string;
+  dataField: string;
+  displayName: string;
+  width: number;
+  visible: boolean;
+  pinned: boolean;
+  originalOrder: number;
 }
 
 // Tạo dữ liệu mẫu lớn để test hiệu suất
 const generateMockData = (count: number): DoiTuongTapHopChiPhi[] => {
-  const data: DoiTuongTapHopChiPhi[] = []
-  const departments = ["Sản Xuất", "Marketing", "Kế Toán", "IT", "Nhân Sự", "Kinh Doanh", "Vận Hành", "Chất Lượng"]
-  const subDepts = ["Team A", "Team B", "Team C", "Phòng Ban", "Bộ Phận", "Chi Nhánh"]
-
+  const data: DoiTuongTapHopChiPhi[] = [];
+  const departments = ['Sản Xuất', 'Marketing', 'Kế Toán', 'IT', 'Nhân Sự', 'Kinh Doanh', 'Vận Hành', 'Chất Lượng'];
+  const subDepts = ['Team A', 'Team B', 'Team C', 'Phòng Ban', 'Bộ Phận', 'Chi Nhánh'];
+  
   for (let i = 1; i <= count; i++) {
-    const isParent = i <= Math.floor(count * 0.3) // 30% là parent
-    const parentId = isParent ? "" : Math.floor(Math.random() * Math.floor(count * 0.3) + 1).toString()
-
+    const isParent = i <= Math.floor(count * 0.3); // 30% là parent
+    const parentId = isParent ? '' : Math.floor(Math.random() * Math.floor(count * 0.3) + 1).toString();
+    
     data.push({
       id: i.toString(),
-      code: `CC${i.toString().padStart(3, "0")}`,
-      nameVi: isParent
-        ? `Phòng ${departments[i % departments.length]}`
+      code: `CC${i.toString().padStart(3, '0')}`,
+      nameVi: isParent 
+        ? `Phòng ${departments[i % departments.length]}` 
         : `${subDepts[i % subDepts.length]} ${departments[i % departments.length]}`,
-      nameEn: isParent
-        ? `${departments[i % departments.length]} Department`
+      nameEn: isParent 
+        ? `${departments[i % departments.length]} Department` 
         : `${subDepts[i % subDepts.length]} ${departments[i % departments.length]}`,
-      nameKo: isParent
-        ? `${departments[i % departments.length]}부`
+      nameKo: isParent 
+        ? `${departments[i % departments.length]}부` 
         : `${subDepts[i % subDepts.length]} ${departments[i % departments.length]}`,
       parentObject: parentId,
       notes: `Ghi chú cho đối tượng ${i}`,
-      createdDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1)
-        .toISOString()
-        .split("T")[0],
-      status: "active",
-    })
+      createdDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0],
+      status: 'active'
+    });
   }
-
-  return data
-}
+  
+  return data;
+};
 
 const CostObjectPage: React.FC = () => {
   // --- State dữ liệu ---
-  const [doiTuongList, setDoiTuongList] = useState<DoiTuongTapHopChiPhi[]>(
-    () => generateMockData(1000), // Tạo 1000 bản ghi để test
-  )
+  const [doiTuongList, setDoiTuongList] = useState<DoiTuongTapHopChiPhi[]>(() => 
+    generateMockData(1000) // Tạo 1000 bản ghi để test
+  );
 
   // Modal Excel
-  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false)
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   // Modal Print
-  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   // Hàm xử lý import từ Excel
   const handleImportFromExcel = useCallback((rows: any[]) => {
@@ -84,517 +79,426 @@ const CostObjectPage: React.FC = () => {
       id: `${Date.now()}-${idx}`,
       code: row.code,
       nameVi: row.nameVi,
-      nameEn: row.nameEn || "",
-      nameKo: row.nameKo || "",
-      parentObject: row.parentObject || "",
-      notes: row.notes || "",
-      createdDate: new Date().toISOString().split("T")[0],
-      status: "active" as const,
-    }))
-    setDoiTuongList((prev) => [...prev, ...items])
-    setIsExcelModalOpen(false)
-  }, [])
+      nameEn: row.nameEn || '',
+      nameKo: row.nameKo || '',
+      parentObject: row.parentObject || '',
+      notes: row.notes || '',
+      createdDate: new Date().toISOString().split('T')[0],
+      status: 'active' as const
+    }));
+    setDoiTuongList(prev => [...prev, ...items]);
+    setIsExcelModalOpen(false);
+  }, []);
 
   // Tree-view: giữ các parent đang expand
-  const [expandedParents, setExpandedParents] = useState<string[]>([])
-  const toggleExpand = useCallback(
-    (id: string) => setExpandedParents((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])),
-    [],
-  )
+  const [expandedParents, setExpandedParents] = useState<string[]>([]);
+  const toggleExpand = useCallback((id: string) =>
+    setExpandedParents(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    ), []);
 
   // Modal thêm/sửa
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingItem, setEditingItem] = useState<DoiTuongTapHopChiPhi | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<DoiTuongTapHopChiPhi | null>(null);
   const [formData, setFormData] = useState({
-    code: "",
-    nameVi: "",
-    nameEn: "",
-    nameKo: "",
-    parentObject: "",
-    notes: "",
-  })
-
-  // Thêm vào phần state declarations (sau dòng const [formData, setFormData] = useState...)
-  const [parentSearchTerm, setParentSearchTerm] = useState("")
-  const [showParentDropdown, setShowParentDropdown] = useState(false)
+    code: '', nameVi: '', nameEn: '', nameKo: '', parentObject: '', notes: ''
+  });
 
   // Search, chọn, bulk, export/print, phân trang
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedItems, setSelectedItems] = useState<string[]>([])
-  const [showActionMenu, setShowActionMenu] = useState<string | null>(null)
-  const [showPrintMenu, setShowPrintMenu] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
+  const [showPrintMenu, setShowPrintMenu] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10); 
 
   // Hover state for rows
-  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null)
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
   // Toolbar states
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [showSettingsPanel, setShowSettingsPanel] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>([
-    {
-      id: "1",
-      dataField: "code",
-      displayName: "Mã đối tượng",
-      width: 150,
-      visible: true,
-      pinned: false,
-      originalOrder: 0,
-    },
-    {
-      id: "2",
-      dataField: "nameVi",
-      displayName: "Tiếng Việt",
-      width: 200,
-      visible: true,
-      pinned: false,
-      originalOrder: 1,
-    },
-    {
-      id: "3",
-      dataField: "nameEn",
-      displayName: "Tiếng Anh",
-      width: 200,
-      visible: true,
-      pinned: false,
-      originalOrder: 2,
-    },
-    {
-      id: "4",
-      dataField: "nameKo",
-      displayName: "Tiếng Hàn",
-      width: 200,
-      visible: true,
-      pinned: false,
-      originalOrder: 3,
-    },
-    { id: "5", dataField: "notes", displayName: "Ghi chú", width: 250, visible: true, pinned: false, originalOrder: 4 },
-  ])
+    { id: '1', dataField: 'code', displayName: 'Mã đối tượng', width: 150, visible: true, pinned: false, originalOrder: 0 },
+    { id: '2', dataField: 'nameVi', displayName: 'Tiếng Việt', width: 200, visible: true, pinned: false, originalOrder: 1 },
+    { id: '3', dataField: 'nameEn', displayName: 'Tiếng Anh', width: 200, visible: true, pinned: false, originalOrder: 2 },
+    { id: '4', dataField: 'nameKo', displayName: 'Tiếng Hàn', width: 200, visible: true, pinned: false, originalOrder: 3 },
+    { id: '5', dataField: 'notes', displayName: 'Ghi chú', width: 250, visible: true, pinned: false, originalOrder: 4 },
+  ]);
 
   // Memoized calculations để tối ưu hiệu suất
   const getOrderedColumns = useMemo(() => {
-    const visibleColumns = columnConfigs.filter((col) => col.visible)
-    const pinnedColumns = visibleColumns.filter((col) => col.pinned).sort((a, b) => a.originalOrder - b.originalOrder)
-    const unpinnedColumns = visibleColumns
-      .filter((col) => !col.pinned)
-      .sort((a, b) => a.originalOrder - b.originalOrder)
-
-    return [...pinnedColumns, ...unpinnedColumns]
-  }, [columnConfigs])
+    const visibleColumns = columnConfigs.filter(col => col.visible);
+    const pinnedColumns = visibleColumns.filter(col => col.pinned).sort((a, b) => a.originalOrder - b.originalOrder);
+    const unpinnedColumns = visibleColumns.filter(col => !col.pinned).sort((a, b) => a.originalOrder - b.originalOrder);
+    
+    return [...pinnedColumns, ...unpinnedColumns];
+  }, [columnConfigs]);
 
   // Tính toán vị trí sticky cho các cột
   const stickyPositions = useMemo(() => {
-    const orderedColumns = getOrderedColumns
-    const pinnedColumns = orderedColumns.filter((col) => col.pinned)
-    const positions: { [key: string]: number } = {}
-
-    const checkboxWidth = 30
-    let currentLeft = checkboxWidth
-
+    const orderedColumns = getOrderedColumns;
+    const pinnedColumns = orderedColumns.filter(col => col.pinned);
+    const positions: { [key: string]: number } = {};
+    
+    const checkboxWidth = 30;
+    let currentLeft = checkboxWidth;
+    
     pinnedColumns.forEach((col) => {
-      positions[col.id] = currentLeft
-      currentLeft += col.width
-    })
-
-    return positions
-  }, [getOrderedColumns])
+      positions[col.id] = currentLeft;
+      currentLeft += col.width;
+    });
+    
+    return positions;
+  }, [getOrderedColumns]);
 
   // Hàm để lấy style cho cột
-  const getColumnStyle = useCallback(
-    (column: ColumnConfig) => {
-      if (!column.pinned) return {}
-
-      return {
-        position: "sticky" as const,
-        left: stickyPositions[column.id],
-        zIndex: 10,
-        backgroundColor: "white",
-      }
-    },
-    [stickyPositions],
-  )
+  const getColumnStyle = useCallback((column: ColumnConfig) => {
+    if (!column.pinned) return {};
+    
+    return {
+      position: 'sticky' as const,
+      left: stickyPositions[column.id],
+      zIndex: 10,
+      backgroundColor: 'white'
+    };
+  }, [stickyPositions]);
 
   // Hàm để lấy style cho header cột
-  const getHeaderColumnStyle = useCallback(
-    (column: ColumnConfig) => {
-      if (!column.pinned) return {}
-
-      return {
-        position: "sticky" as const,
-        left: stickyPositions[column.id],
-        zIndex: 11,
-        backgroundColor: "#fef2f2", // bg-red-50
-      }
-    },
-    [stickyPositions],
-  )
+  const getHeaderColumnStyle = useCallback((column: ColumnConfig) => {
+    if (!column.pinned) return {};
+    
+    return {
+      position: 'sticky' as const,
+      left: stickyPositions[column.id],
+      zIndex: 11,
+      backgroundColor: '#fef2f2' // bg-red-50
+    };
+  }, [stickyPositions]);
 
   // Tối ưu: Memoize filtered data
   const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) return doiTuongList
-
-    const lowerSearchTerm = searchTerm.toLowerCase()
-    return doiTuongList.filter(
-      (item) =>
-        item.code.toLowerCase().includes(lowerSearchTerm) ||
-        item.nameVi.toLowerCase().includes(lowerSearchTerm) ||
-        item.nameEn.toLowerCase().includes(lowerSearchTerm) ||
-        item.nameKo.toLowerCase().includes(lowerSearchTerm),
-    )
-  }, [doiTuongList, searchTerm])
+    if (!searchTerm.trim()) return doiTuongList;
+    
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return doiTuongList.filter(item =>
+      item.code.toLowerCase().includes(lowerSearchTerm) ||
+      item.nameVi.toLowerCase().includes(lowerSearchTerm) ||
+      item.nameEn.toLowerCase().includes(lowerSearchTerm) ||
+      item.nameKo.toLowerCase().includes(lowerSearchTerm)
+    );
+  }, [doiTuongList, searchTerm]);
 
   // Tối ưu: Memoize children map
   const childrenMap = useMemo(() => {
-    const map: Record<string, DoiTuongTapHopChiPhi[]> = {}
-    filteredData.forEach((item) => {
+    const map: Record<string, DoiTuongTapHopChiPhi[]> = {};
+    filteredData.forEach(item => {
       if (item.parentObject) {
-        map[item.parentObject] = map[item.parentObject] || []
-        map[item.parentObject].push(item)
+        map[item.parentObject] = map[item.parentObject] || [];
+        map[item.parentObject].push(item);
       }
-    })
-    return map
-  }, [filteredData])
+    });
+    return map;
+  }, [filteredData]);
 
   // Tối ưu: Memoize root items
-  const rootItems = useMemo(() => filteredData.filter((item) => !item.parentObject), [filteredData])
+  const rootItems = useMemo(() => 
+    filteredData.filter(item => !item.parentObject), 
+    [filteredData]
+  );
 
   // Tối ưu: Memoize flattened tree structure
-  interface Flattened {
-    item: DoiTuongTapHopChiPhi
-    depth: number
-  }
-
+  interface Flattened { item: DoiTuongTapHopChiPhi; depth: number; }
+  
   const flattenedItems = useMemo(() => {
     const flattenWithDepth = (items: DoiTuongTapHopChiPhi[], depth = 0): Flattened[] =>
       items.reduce<Flattened[]>((acc, item) => {
-        acc.push({ item, depth })
+        acc.push({ item, depth });
         if (expandedParents.includes(item.id) && childrenMap[item.id]) {
-          acc.push(...flattenWithDepth(childrenMap[item.id], depth + 1))
+          acc.push(...flattenWithDepth(childrenMap[item.id], depth + 1));
         }
-        return acc
-      }, [])
+        return acc;
+      }, []);
 
     // Khi đang search: hiển thị flat list của filtered; nếu không: hiển thị tree-view
-    return searchTerm ? filteredData.map((item) => ({ item, depth: 0 })) : flattenWithDepth(rootItems)
-  }, [searchTerm, filteredData, rootItems, expandedParents, childrenMap])
+    return searchTerm
+      ? filteredData.map(item => ({ item, depth: 0 }))
+      : flattenWithDepth(rootItems);
+  }, [searchTerm, filteredData, rootItems, expandedParents, childrenMap]);
 
   // Tối ưu: Memoize pagination
   const paginationData = useMemo(() => {
-    const totalPages = Math.ceil(flattenedItems.length / itemsPerPage)
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    const displayed = flattenedItems.slice(startIndex, endIndex)
+    const totalPages = Math.ceil(flattenedItems.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const displayed = flattenedItems.slice(startIndex, endIndex);
+    
+    return { totalPages, startIndex, endIndex, displayed };
+  }, [flattenedItems, currentPage, itemsPerPage]);
 
-    return { totalPages, startIndex, endIndex, displayed }
-  }, [flattenedItems, currentPage, itemsPerPage])
-
-  const { totalPages, startIndex, endIndex, displayed } = paginationData
+  const { totalPages, startIndex, endIndex, displayed } = paginationData;
 
   // Hàm để tìm tất cả các con của một đối tượng (đệ quy)
   const getAllChildren = useCallback((parentId: string, items: DoiTuongTapHopChiPhi[]): string[] => {
-    const children: string[] = []
-    const directChildren = items.filter((item) => item.parentObject === parentId)
-
-    directChildren.forEach((child) => {
-      children.push(child.id)
-      children.push(...getAllChildren(child.id, items))
-    })
-
-    return children
-  }, [])
+    const children: string[] = [];
+    const directChildren = items.filter(item => item.parentObject === parentId);
+    
+    directChildren.forEach(child => {
+      children.push(child.id);
+      children.push(...getAllChildren(child.id, items));
+    });
+    
+    return children;
+  }, []);
 
   // Hàm kiểm tra xem đối tượng có con hay không
-  const hasChildren = useCallback(
-    (parentId: string): boolean => {
-      return doiTuongList.some((item) => item.parentObject === parentId)
-    },
-    [doiTuongList],
-  )
+  const hasChildren = useCallback((parentId: string): boolean => {
+    return doiTuongList.some(item => item.parentObject === parentId);
+  }, [doiTuongList]);
 
   // Hàm lấy danh sách tên các đối tượng con
-  const getChildrenNames = useCallback(
-    (parentId: string): string[] => {
-      const directChildren = doiTuongList.filter((item) => item.parentObject === parentId)
-      return directChildren.map((child) => `${child.code} - ${child.nameVi}`)
-    },
-    [doiTuongList],
-  )
+  const getChildrenNames = useCallback((parentId: string): string[] => {
+    const directChildren = doiTuongList.filter(item => item.parentObject === parentId);
+    return directChildren.map(child => `${child.code} - ${child.nameVi}`);
+  }, [doiTuongList]);
 
   // --- CRUD Handlers ---
   const handleAdd = useCallback(() => {
-    setEditingItem(null)
-    setFormData({ code: "", nameVi: "", nameEn: "", nameKo: "", parentObject: "", notes: "" })
-    setParentSearchTerm("")
-    setShowParentDropdown(false)
-    setIsModalOpen(true)
-  }, [])
+    setEditingItem(null);
+    setFormData({ code: '', nameVi: '', nameEn: '', nameKo: '', parentObject: '', notes: '' });
+    setIsModalOpen(true);
+  }, []);
 
   const handleEdit = useCallback((item: DoiTuongTapHopChiPhi) => {
-    setEditingItem(item)
+    setEditingItem(item);
     setFormData({
       code: item.code,
       nameVi: item.nameVi,
       nameEn: item.nameEn,
       nameKo: item.nameKo,
       parentObject: item.parentObject,
-      notes: item.notes,
-    })
-    setParentSearchTerm("")
-    setShowParentDropdown(false)
-    setIsModalOpen(true)
-    setShowActionMenu(null)
-  }, [])
+      notes: item.notes
+    });
+    setIsModalOpen(true);
+    setShowActionMenu(null);
+  }, []);
 
-  const handleDelete = useCallback(
-    (id: string) => {
-      // Tìm đối tượng cần xóa
-      const itemToDelete = doiTuongList.find((item) => item.id === id)
-      if (!itemToDelete) {
-        alert("Không tìm thấy đối tượng cần xóa!")
-        return
-      }
+  const handleDelete = useCallback((id: string) => {
+    // Tìm đối tượng cần xóa
+    const itemToDelete = doiTuongList.find(item => item.id === id);
+    if (!itemToDelete) {
+      alert('Không tìm thấy đối tượng cần xóa!');
+      return;
+    }
 
-      // Kiểm tra xem đối tượng có con hay không
-      if (hasChildren(id)) {
-        const childrenNames = getChildrenNames(id)
-        const childrenList = childrenNames.slice(0, 5).join("\n") // Hiển thị tối đa 5 con đầu tiên
-        const moreChildren = childrenNames.length > 5 ? `\n... và ${childrenNames.length - 5} đối tượng khác` : ""
+    // Kiểm tra xem đối tượng có con hay không
+    if (hasChildren(id)) {
+      const childrenNames = getChildrenNames(id);
+      const childrenList = childrenNames.slice(0, 5).join('\n'); // Hiển thị tối đa 5 con đầu tiên
+      const moreChildren = childrenNames.length > 5 ? `\n... và ${childrenNames.length - 5} đối tượng khác` : '';
+      
+      alert(
+        `Không thể xóa đối tượng "${itemToDelete.code} - ${itemToDelete.nameVi}" vì nó có ${childrenNames.length} đối tượng con:\n\n${childrenList}${moreChildren}\n\nVui lòng xóa tất cả các đối tượng con trước khi xóa đối tượng cha.`
+      );
+      setShowActionMenu(null);
+      return;
+    }
 
-        alert(
-          `Không thể xóa đối tượng "${itemToDelete.code} - ${itemToDelete.nameVi}" vì nó có ${childrenNames.length} đối tượng con:\n\n${childrenList}${moreChildren}\n\nVui lòng xóa tất cả các đối tượng con trước khi xóa đối tượng cha.`,
-        )
-        setShowActionMenu(null)
-        return
-      }
-
-      // Nếu không có con, hiển thị xác nhận xóa
-      const confirmMessage = `Bạn có chắc chắn muốn xóa đối tượng "${itemToDelete.code} - ${itemToDelete.nameVi}" không?`
-
-      if (window.confirm(confirmMessage)) {
-        setDoiTuongList((prev) => prev.filter((x) => x.id !== id))
-
-        // Nếu đối tượng đang được chọn, bỏ chọn nó
-        setSelectedItems((prev) => prev.filter((selectedId) => selectedId !== id))
-
-        // Thông báo xóa thành công
-        console.log(`Đã xóa thành công đối tượng: ${itemToDelete.code} - ${itemToDelete.nameVi}`)
-      }
-
-      setShowActionMenu(null)
-    },
-    [doiTuongList, hasChildren, getChildrenNames],
-  )
+    // Nếu không có con, hiển thị xác nhận xóa
+    const confirmMessage = `Bạn có chắc chắn muốn xóa đối tượng "${itemToDelete.code} - ${itemToDelete.nameVi}" không?`;
+    
+    if (window.confirm(confirmMessage)) {
+      setDoiTuongList(prev => prev.filter(x => x.id !== id));
+      
+      // Nếu đối tượng đang được chọn, bỏ chọn nó
+      setSelectedItems(prev => prev.filter(selectedId => selectedId !== id));
+      
+      // Thông báo xóa thành công
+      console.log(`Đã xóa thành công đối tượng: ${itemToDelete.code} - ${itemToDelete.nameVi}`);
+    }
+    
+    setShowActionMenu(null);
+  }, [doiTuongList, hasChildren, getChildrenNames]);
 
   const handleBulkDelete = useCallback(() => {
     if (selectedItems.length === 0) {
-      alert("Vui lòng chọn ít nhất một đối tượng để xóa!")
-      return
+      alert('Vui lòng chọn ít nhất một đối tượng để xóa!');
+      return;
     }
 
-    // Kiểm tra từng đối tượng được chọn
-    const itemsWithUnselectedChildren: string[] = []
-    const itemsCanDelete: string[] = []
+    // Kiểm tra từng đối tượng được chọn xem có con hay không
+    const itemsWithChildren: string[] = [];
+    const itemsCanDelete: string[] = [];
 
-    selectedItems.forEach((id) => {
-      const item = doiTuongList.find((x) => x.id === id)
+    selectedItems.forEach(id => {
+      const item = doiTuongList.find(x => x.id === id);
       if (item) {
         if (hasChildren(id)) {
-          // Lấy tất cả các con trực tiếp của đối tượng này
-          const directChildren = doiTuongList.filter((child) => child.parentObject === id)
-          const allChildrenSelected = directChildren.every((child) => selectedItems.includes(child.id))
-
-          if (allChildrenSelected) {
-            // Tất cả con đã được chọn, có thể xóa cha
-            itemsCanDelete.push(`${item.code} - ${item.nameVi}`)
-          } else {
-            // Có con chưa được chọn, không thể xóa cha
-            const unselectedChildren = directChildren.filter((child) => !selectedItems.includes(child.id))
-            itemsWithUnselectedChildren.push(
-              `${item.code} - ${item.nameVi} (còn ${unselectedChildren.length} con chưa chọn)`,
-            )
-          }
+          itemsWithChildren.push(`${item.code} - ${item.nameVi}`);
         } else {
-          // Không có con, có thể xóa
-          itemsCanDelete.push(`${item.code} - ${item.nameVi}`)
+          itemsCanDelete.push(`${item.code} - ${item.nameVi}`);
         }
       }
-    })
+    });
 
-    // Nếu có đối tượng cha có con chưa được chọn, thông báo lỗi
-    if (itemsWithUnselectedChildren.length > 0) {
-      const itemsList = itemsWithUnselectedChildren.slice(0, 5).join("\n")
-      const moreItems =
-        itemsWithUnselectedChildren.length > 5
-          ? `\n... và ${itemsWithUnselectedChildren.length - 5} đối tượng khác`
-          : ""
-
+    // Nếu có đối tượng có con, thông báo lỗi
+    if (itemsWithChildren.length > 0) {
+      const itemsList = itemsWithChildren.slice(0, 5).join('\n');
+      const moreItems = itemsWithChildren.length > 5 ? `\n... và ${itemsWithChildren.length - 5} đối tượng khác` : '';
+      
       alert(
-        `Không thể xóa ${itemsWithUnselectedChildren.length} đối tượng sau vì chúng có đối tượng con chưa được chọn:\n\n${itemsList}${moreItems}\n\nVui lòng chọn tất cả các đối tượng con trước khi xóa đối tượng cha, hoặc bỏ chọn đối tượng cha.`,
-      )
-      return
+        `Không thể xóa ${itemsWithChildren.length} đối tượng sau vì chúng có đối tượng con:\n\n${itemsList}${moreItems}\n\nVui lòng xóa tất cả các đối tượng con trước khi xóa đối tượng cha.`
+      );
+      return;
     }
 
     // Nếu tất cả đối tượng đều có thể xóa
     if (itemsCanDelete.length > 0) {
-      const confirmMessage = `Bạn có chắc chắn muốn xóa ${itemsCanDelete.length} đối tượng đã chọn không?\n\n${itemsCanDelete.slice(0, 5).join("\n")}${itemsCanDelete.length > 5 ? `\n... và ${itemsCanDelete.length - 5} đối tượng khác` : ""}`
-
+      const confirmMessage = `Bạn có chắc chắn muốn xóa ${itemsCanDelete.length} đối tượng đã chọn không?\n\n${itemsCanDelete.slice(0, 5).join('\n')}${itemsCanDelete.length > 5 ? `\n... và ${itemsCanDelete.length - 5} đối tượng khác` : ''}`;
+      
       if (window.confirm(confirmMessage)) {
-        setDoiTuongList((prev) => prev.filter((x) => !selectedItems.includes(x.id)))
-        setSelectedItems([])
-        console.log(`Đã xóa thành công ${itemsCanDelete.length} đối tượng`)
+        setDoiTuongList(prev => prev.filter(x => !selectedItems.includes(x.id)));
+        setSelectedItems([]);
+        console.log(`Đã xóa thành công ${itemsCanDelete.length} đối tượng`);
       }
     }
-  }, [selectedItems, doiTuongList, hasChildren])
+  }, [selectedItems, doiTuongList, hasChildren]);
 
-  const handleSelectAll = useCallback(
-    (checked: boolean) => setSelectedItems(checked ? displayed.map(({ item }) => item.id) : []),
-    [displayed],
-  )
+  const handleSelectAll = useCallback((checked: boolean) =>
+    setSelectedItems(checked ? displayed.map(({ item }) => item.id) : []), 
+    [displayed]
+  );
 
-  const handleSelectOne = useCallback(
-    (id: string, checked: boolean) =>
-      setSelectedItems((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id))),
-    [],
-  )
+  const handleSelectOne = useCallback((id: string, checked: boolean) =>
+    setSelectedItems(prev => checked ? [...prev, id] : prev.filter(x => x !== id)), 
+    []
+  );
 
-  const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault()
-      if (editingItem) {
-        setDoiTuongList((prev) => prev.map((x) => (x.id === editingItem.id ? { ...x, ...formData } : x)))
-      } else {
-        const newItem: DoiTuongTapHopChiPhi = {
-          id: Date.now().toString(),
-          ...formData,
-          createdDate: new Date().toISOString().split("T")[0],
-          status: "active",
-        }
-        setDoiTuongList((prev) => [...prev, newItem])
-      }
-      setIsModalOpen(false)
-    },
-    [editingItem, formData],
-  )
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingItem) {
+      setDoiTuongList(prev =>
+        prev.map(x => x.id === editingItem.id ? { ...x, ...formData } : x)
+      );
+    } else {
+      const newItem: DoiTuongTapHopChiPhi = {
+        id: Date.now().toString(),
+        ...formData,
+        createdDate: new Date().toISOString().split('T')[0],
+        status: 'active'
+      };
+      setDoiTuongList(prev => [...prev, newItem]);
+    }
+    setIsModalOpen(false);
+  }, [editingItem, formData]);
 
-  const handlePrint = useCallback((lang: "vi" | "en" | "ko") => {
-    setIsPrintModalOpen(true)
-    setShowPrintMenu(false)
-  }, [])
+  const handlePrint = useCallback((lang: 'vi' | 'en' | 'ko') => {
+    setIsPrintModalOpen(true);
+    setShowPrintMenu(false);
+  }, []);
 
   // Toolbar handlers
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true)
+    setIsRefreshing(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      console.log("Dữ liệu đã được làm mới")
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Dữ liệu đã được làm mới');
     } catch (error) {
-      console.error("Lỗi khi làm mới dữ liệu:", error)
+      console.error('Lỗi khi làm mới dữ liệu:', error);
     } finally {
-      setIsRefreshing(false)
+      setIsRefreshing(false);
     }
-  }, [])
+  }, []);
 
   const handleExportExcel = useCallback(() => {
-    const orderedColumns = getOrderedColumns
-    const headers = orderedColumns.map((col) => col.displayName).join(",")
-
+    const orderedColumns = getOrderedColumns;
+    const headers = orderedColumns.map(col => col.displayName).join(',');
+    
     const rows = displayed.map(({ item }) => {
       return orderedColumns
-        .map((col) => {
-          const value = item[col.dataField as keyof DoiTuongTapHopChiPhi] || ""
-          return `"${value}"`
+        .map(col => {
+          const value = item[col.dataField as keyof DoiTuongTapHopChiPhi] || '';
+          return `"${value}"`;
         })
-        .join(",")
-    })
+        .join(',');
+    });
 
-    const csvContent = [headers, ...rows].join("\n")
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", "doi-tuong-tap-hop-chi-phi.csv")
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }, [getOrderedColumns, displayed])
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'doi-tuong-tap-hop-chi-phi.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [getOrderedColumns, displayed]);
 
   const handleColumnConfigChange = useCallback((columnId: string, field: keyof ColumnConfig, value: any) => {
-    setColumnConfigs((prev) => prev.map((col) => (col.id === columnId ? { ...col, [field]: value } : col)))
-  }, [])
+    setColumnConfigs(prev => 
+      prev.map(col => 
+        col.id === columnId ? { ...col, [field]: value } : col
+      )
+    );
+  }, []);
 
   // Pagination handlers
   const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page)
-  }, [])
+    setCurrentPage(page);
+  }, []);
 
   const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage)
-    setCurrentPage(1) // Reset to first page when changing items per page
-  }, [])
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  }, []);
 
   // Đóng dropdown khi click ngoài
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
-      const t = e.target as Element
-      if (showPrintMenu && !t.closest(".print-dropdown")) setShowPrintMenu(false)
-      if (showActionMenu && !t.closest(".action-dropdown")) setShowActionMenu(null)
-      if (showSettingsPanel && !t.closest(".settings-panel") && !t.closest(".settings-trigger")) {
-        setShowSettingsPanel(false)
+      const t = e.target as Element;
+      if (showPrintMenu && !t.closest('.print-dropdown')) setShowPrintMenu(false);
+      if (showActionMenu && !t.closest('.action-dropdown')) setShowActionMenu(null);
+      if (showSettingsPanel && !t.closest('.settings-panel') && !t.closest('.settings-trigger')) {
+        setShowSettingsPanel(false);
       }
-    }
-    document.addEventListener("mousedown", onClickOutside)
-    return () => document.removeEventListener("mousedown", onClickOutside)
-  }, [showPrintMenu, showActionMenu, showSettingsPanel])
-
-  // Thêm vào phần useEffect (sau useEffect hiện có)
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element
-      if (!target.closest(".parent-select-dropdown")) {
-        setShowParentDropdown(false)
-      }
-    }
-
-    if (showParentDropdown) {
-      document.addEventListener("mousedown", handleClickOutside)
-      return () => document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [showParentDropdown])
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [showPrintMenu, showActionMenu, showSettingsPanel]);
 
   // --- Select Đối tượng gốc: ẩn chính item đang edit và tất cả con của nó ---
   const getValidParentOptions = useMemo(() => {
     if (!editingItem) {
-      return doiTuongList
+      return doiTuongList;
     }
 
-    const childrenIds = getAllChildren(editingItem.id, doiTuongList)
-    const excludedIds = [editingItem.id, ...childrenIds]
+    const childrenIds = getAllChildren(editingItem.id, doiTuongList);
+    const excludedIds = [editingItem.id, ...childrenIds];
 
-    return doiTuongList.filter((opt) => !excludedIds.includes(opt.id))
-  }, [editingItem, doiTuongList, getAllChildren])
+    return doiTuongList.filter(opt => !excludedIds.includes(opt.id));
+  }, [editingItem, doiTuongList, getAllChildren]);
 
   // Tối ưu: Debounce search để tránh re-render liên tục
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
-
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+  
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, 300)
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-    return () => clearTimeout(timer)
-  }, [searchTerm])
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Reset về trang 1 khi search
   useEffect(() => {
-    setCurrentPage(1)
-  }, [debouncedSearchTerm])
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
 
   return (
     <div className="space-y-0">
       {/* HEADER & ACTIONS */}
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Đối tượng tập hợp chi phí</h1>
           <p className="text-gray-600 mt-1">
@@ -604,26 +508,23 @@ const CostObjectPage: React.FC = () => {
         <div className="flex items-center space-x-3 mt-4 sm:mt-0">
           {/* In ấn */}
           <div className="relative print-dropdown">
-            <button
-              onClick={() => handlePrint("vi")}
+            <button onClick={() => handlePrint('vi')} 
               className="inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
             >
-              <Icons.Printer size={16} /> <span className="hidden sm:block">In ấn</span>
+              <Icons.Printer size={16}/> <span className="hidden sm:block">In ấn</span>
             </button>
-          </div>
+          </div> 
           {/* Xuất Excel */}
-          <button
-            onClick={() => setIsExcelModalOpen(true)}
+          <button onClick={() => setIsExcelModalOpen(true)}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-green-700"
           >
-            <Icons.Upload size={16} /> <span className="hidden sm:block">Nhập Excel</span>
+            <Icons.Upload size={16}/> <span className="hidden sm:block">Nhập Excel</span>
           </button>
           {/* Thêm mới */}
-          <button
-            onClick={handleAdd}
+          <button onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-blue-700"
           >
-            <Icons.Plus size={16} /> <span className="hidden sm:block">Thêm mới</span>
+            <Icons.Plus size={16}/> <span className="hidden sm:block">Thêm mới</span>
           </button>
         </div>
       </div>
@@ -633,12 +534,14 @@ const CostObjectPage: React.FC = () => {
         <div className="block sm:flex items-center justify-between p-6">
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <Icons.Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Icons.Search size={16}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
               <input
                 type="text"
                 placeholder="Tìm kiếm mã, tên…"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
               />
             </div>
@@ -653,7 +556,7 @@ const CostObjectPage: React.FC = () => {
                   className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Làm mới dữ liệu"
                 >
-                  <Icons.RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+                  <Icons.RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
                 </button>
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                   Làm mới dữ liệu
@@ -693,11 +596,10 @@ const CostObjectPage: React.FC = () => {
           {selectedItems.length > 0 && (
             <div className="flex mt-4 sm:mt-0 items-center space-x-4">
               <span className="text-sm text-gray-600">Đã chọn {selectedItems.length} mục</span>
-              <button
-                onClick={handleBulkDelete}
+              <button onClick={handleBulkDelete}
                 className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-red-700"
               >
-                <Icons.Trash2 size={16} /> <span>Xóa</span>
+                <Icons.Trash2 size={16}/> <span>Xóa</span>
               </button>
             </div>
           )}
@@ -708,113 +610,118 @@ const CostObjectPage: React.FC = () => {
           <table className="min-w-full table-auto">
             <thead className="bg-red-50">
               <tr>
-                <th
+                <th 
                   className="sticky left-0 z-20 bg-red-50 px-4 py-3 text-left"
-                  style={{
-                    width: "30px",
-                    minWidth: "30px",
-                    maxWidth: "30px",
+                  style={{ 
+                    width: '30px',
+                    minWidth: '30px',
+                    maxWidth: '30px'
                   }}
                 >
                   <input
                     type="checkbox"
                     checked={selectedItems.length === displayed.length && displayed.length > 0}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    onChange={e => handleSelectAll(e.target.checked)}
                     className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                   />
                 </th>
-                {getOrderedColumns.map((col) => (
-                  <th
-                    key={col.id}
-                    className="px-4 py-3 text-left text-sm font-semibold text-red-700"
+                {getOrderedColumns.map(col => (
+                  <th 
+                    key={col.id} 
+                    className="px-4 py-3 text-left text-sm font-semibold text-red-700" 
                     style={{
                       width: col.width,
                       minWidth: col.width,
-                      ...getHeaderColumnStyle(col),
+                      ...getHeaderColumnStyle(col)
                     }}
                   >
                     <div className="flex items-center">
                       {col.displayName}
-                      {col.pinned && <Icons.Pin size={12} className="ml-1 text-red-500" />}
+                      {col.pinned && (
+                        <Icons.Pin size={12} className="ml-1 text-red-500" />
+                      )}
                     </div>
                   </th>
                 ))}
-                <th
-                  className="sticky right-0 -z-10 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-700"
-                  style={{
-                    width: "100px",
-                    minWidth: "100px",
-                    maxWidth: "100px",
+                <th 
+                  className="sticky right-0 z-10 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-700"
+                  style={{ 
+                    width: '100px',
+                    minWidth: '100px',
+                    maxWidth: '100px'
                   }}
                 >
                   Thao tác
-                </th>
+                </th> 
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {displayed.map(({ item, depth }) => {
-                const hasChildrenItems = Boolean(childrenMap[item.id]?.length)
-                const isExpanded = expandedParents.includes(item.id)
-
+                const hasChildrenItems = Boolean(childrenMap[item.id]?.length);
+                const isExpanded  = expandedParents.includes(item.id);
+                
                 return (
-                  <tr
-                    key={item.id}
+                  <tr 
+                    key={item.id} 
                     className="group hover:bg-gray-50"
                     onMouseEnter={() => setHoveredRowId(item.id)}
                     onMouseLeave={() => setHoveredRowId(null)}
                   >
-                    <td
+                    <td 
                       className="sticky left-0 z-15 bg-white px-4 py-3 group-hover:bg-gray-50"
-                      style={{
-                        width: "30px",
-                        minWidth: "30px",
-                        maxWidth: "30px",
+                      style={{ 
+                        width: '30px',
+                        minWidth: '30px',
+                        maxWidth: '30px'
                       }}
                     >
                       <input
                         type="checkbox"
                         checked={selectedItems.includes(item.id)}
-                        onChange={(e) => handleSelectOne(item.id, e.target.checked)}
+                        onChange={e => handleSelectOne(item.id, e.target.checked)}
                         className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                       />
                     </td>
-                    {getOrderedColumns.map((col) => (
-                      <td
-                        key={col.id}
+                    {getOrderedColumns.map(col => (
+                      <td 
+                        key={col.id} 
                         className="px-4 py-3 group-hover:bg-gray-50"
                         style={{
                           width: col.width,
                           minWidth: col.width,
-                          ...getColumnStyle(col),
+                          ...getColumnStyle(col)
                         }}
                       >
-                        {col.dataField === "code" ? (
+                        {col.dataField === 'code' ? (
                           <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
                             {hasChildrenItems && (
                               <button onClick={() => toggleExpand(item.id)} className="ml-[-17px] mr-0">
-                                {isExpanded ? <Icons.ChevronDown size={16} /> : <Icons.ChevronRight size={16} />}
+                                {isExpanded
+                                  ? <Icons.ChevronDown size={16}/>
+                                  : <Icons.ChevronRight size={16}/>
+                                }
                               </button>
                             )}
-                            <span className={depth > 0 ? "text-gray-600" : "font-medium text-gray-900"}>
+                            <span className={depth > 0 ? 'text-gray-600' : 'font-medium text-gray-900'}>
                               {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
                             </span>
                           </div>
-                        ) : col.dataField === "notes" ? (
+                        ) : col.dataField === 'notes' ? (
                           <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
                             {item.notes}
                           </span>
                         ) : (
                           <span>{item[col.dataField as keyof DoiTuongTapHopChiPhi]}</span>
                         )}
-                      </td>
+                      </td> 
                     ))}
                     {/* Cột hành động (Edit/Delete) */}
                     <td
                       className="sticky group-hover:bg-gray-50 right-0 z-10 px-1 py-3 text-center"
                       style={{
-                        width: "100px",
-                        minWidth: "100px",
-                        maxWidth: "100px",
+                        width: '100px',
+                        minWidth: '100px',
+                        maxWidth: '100px',
                       }}
                     >
                       <div className="flex items-center justify-center space-x-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
@@ -830,7 +737,7 @@ const CostObjectPage: React.FC = () => {
                             Sửa
                           </div>
                         </div>
-
+                  
                         {/* Xóa */}
                         <div className="relative">
                           <button
@@ -846,7 +753,7 @@ const CostObjectPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
@@ -882,11 +789,14 @@ const CostObjectPage: React.FC = () => {
                   Thiết lập bảng dữ liệu
                   <div className="text-sm text-gray-400 ">Tùy chỉnh hiển thị các cột trong bảng dữ liệu</div>
                 </h3>
-                <button onClick={() => setShowSettingsPanel(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <button
+                  onClick={() => setShowSettingsPanel(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
                   <Icons.X size={20} className="text-gray-500" />
                 </button>
               </div>
-
+              
               <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-4">
                   {columnConfigs.map((column) => (
@@ -896,7 +806,7 @@ const CostObjectPage: React.FC = () => {
                         <input
                           type="checkbox"
                           checked={column.visible}
-                          onChange={(e) => handleColumnConfigChange(column.id, "visible", e.target.checked)}
+                          onChange={(e) => handleColumnConfigChange(column.id, 'visible', e.target.checked)}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                         <div className="flex-1">
@@ -910,28 +820,30 @@ const CostObjectPage: React.FC = () => {
                           </div>
                         )}
                       </div>
-
+                      
                       {/* Tên hiển thị và Độ rộng cột trên cùng 1 dòng */}
                       <div className="grid grid-cols-5 gap-3">
                         <div className="col-span-3">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Tên cột hiển thị</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tên cột hiển thị
+                          </label>
                           <input
                             type="text"
                             value={column.displayName}
-                            onChange={(e) => handleColumnConfigChange(column.id, "displayName", e.target.value)}
+                            onChange={(e) => handleColumnConfigChange(column.id, 'displayName', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             disabled={!column.visible}
                           />
                         </div>
-
+                        
                         <div className="col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Width</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Width
+                          </label>
                           <input
                             type="number"
                             value={column.width}
-                            onChange={(e) =>
-                              handleColumnConfigChange(column.id, "width", Number.parseInt(e.target.value) || 100)
-                            }
+                            onChange={(e) => handleColumnConfigChange(column.id, 'width', parseInt(e.target.value) || 100)}
                             min="50"
                             max="500"
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -939,19 +851,21 @@ const CostObjectPage: React.FC = () => {
                           />
                         </div>
                       </div>
-
+                      
                       {/* Ghim cột */}
                       <div className="flex items-center space-x-2">
                         <input
                           type="checkbox"
                           checked={column.pinned}
-                          onChange={(e) => handleColumnConfigChange(column.id, "pinned", e.target.checked)}
+                          onChange={(e) => handleColumnConfigChange(column.id, 'pinned', e.target.checked)}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           disabled={!column.visible}
                         />
-                        <label className="text-sm text-gray-700">Ghim cột bên trái</label>
+                        <label className="text-sm text-gray-700">
+                          Ghim cột bên trái
+                        </label>
                       </div>
-
+                      
                       {/* Hiển thị vị trí sticky nếu được ghim */}
                       {column.pinned && column.visible && (
                         <div className="bg-blue-50 border border-blue-200 rounded p-2">
@@ -965,59 +879,19 @@ const CostObjectPage: React.FC = () => {
                   ))}
                 </div>
               </div>
-
+              
               {/* Action buttons - Fixed at bottom */}
               <div className="p-6 border-t border-gray-200 flex space-x-3">
                 <button
                   onClick={() => {
                     // Reset to default
                     setColumnConfigs([
-                      {
-                        id: "1",
-                        dataField: "code",
-                        displayName: "Mã đối tượng",
-                        width: 150,
-                        visible: true,
-                        pinned: false,
-                        originalOrder: 0,
-                      },
-                      {
-                        id: "2",
-                        dataField: "nameVi",
-                        displayName: "Tiếng Việt",
-                        width: 200,
-                        visible: true,
-                        pinned: false,
-                        originalOrder: 1,
-                      },
-                      {
-                        id: "3",
-                        dataField: "nameEn",
-                        displayName: "Tiếng Anh",
-                        width: 200,
-                        visible: true,
-                        pinned: false,
-                        originalOrder: 2,
-                      },
-                      {
-                        id: "4",
-                        dataField: "nameKo",
-                        displayName: "Tiếng Hàn",
-                        width: 200,
-                        visible: true,
-                        pinned: false,
-                        originalOrder: 3,
-                      },
-                      {
-                        id: "5",
-                        dataField: "notes",
-                        displayName: "Ghi chú",
-                        width: 250,
-                        visible: true,
-                        pinned: false,
-                        originalOrder: 4,
-                      },
-                    ])
+                      { id: '1', dataField: 'code', displayName: 'Mã đối tượng', width: 150, visible: true, pinned: false, originalOrder: 0 },
+                      { id: '2', dataField: 'nameVi', displayName: 'Tiếng Việt', width: 200, visible: true, pinned: false, originalOrder: 1 },
+                      { id: '3', dataField: 'nameEn', displayName: 'Tiếng Anh', width: 200, visible: true, pinned: false, originalOrder: 2 },
+                      { id: '4', dataField: 'nameKo', displayName: 'Tiếng Hàn', width: 200, visible: true, pinned: false, originalOrder: 3 },
+                      { id: '5', dataField: 'notes', displayName: 'Ghi chú', width: 250, visible: true, pinned: false, originalOrder: 4 },
+                    ]);
                   }}
                   className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
@@ -1035,11 +909,12 @@ const CostObjectPage: React.FC = () => {
         </div>
       )}
 
-      {/* Excel Import Modal */}
+      {/* Excel Import Modal - Truyền dữ liệu hiện có */}
       <ExcelImportModal
         isOpen={isExcelModalOpen}
         onClose={() => setIsExcelModalOpen(false)}
         onImport={handleImportFromExcel}
+        existingData={doiTuongList}
       />
 
       {/* Print Modal */}
@@ -1048,29 +923,22 @@ const CostObjectPage: React.FC = () => {
         onClose={() => setIsPrintModalOpen(false)}
         data={doiTuongList}
         companyInfo={{
-          name: "Công ty TNHH ABC Technology",
-          address: "123 Đường ABC, Quận Ba Đình, Hà Nội",
-          taxCode: "0123456789",
+          name: 'Công ty TNHH ABC Technology',
+          address: '123 Đường ABC, Quận Ba Đình, Hà Nội',
+          taxCode: '0123456789'
         }}
       />
-
+      
       {/* MODAL THÊM/SỬA */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-xl font-bold text-gray-900">
-                {editingItem ? "Chỉnh sửa đối tượng" : "Thêm mới đối tượng"}
+                {editingItem ? 'Chỉnh sửa đối tượng' : 'Thêm mới đối tượng'}
               </h2>
-              <button
-                onClick={() => {
-                  setIsModalOpen(false)
-                  setParentSearchTerm("")
-                  setShowParentDropdown(false)
-                }}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <Icons.X size={20} className="text-gray-500" />
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <Icons.X size={20} className="text-gray-500"/>
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -1081,112 +949,40 @@ const CostObjectPage: React.FC = () => {
                     Mã đối tượng <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="text"
-                    required
+                    type="text" required
                     value={formData.code}
-                    onChange={(e) => setFormData((d) => ({ ...d, code: e.target.value }))}
+                    onChange={e => setFormData(d => ({ ...d, code: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập mã đối tượng"
                   />
                 </div>
-                {/* Thay thế select element "Đối tượng gốc" bằng component search có dropdown: */}
-                <div className="relative parent-select-dropdown">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Đối tượng gốc
                     {editingItem && (
-                      <span className="text-xs text-gray-500 ml-2">(Ẩn đối tượng hiện tại và các con)</span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        (Ẩn đối tượng hiện tại và các con)
+                      </span>
                     )}
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={
-                        formData.parentObject
-                          ? getValidParentOptions.find((opt) => opt.id === formData.parentObject)?.code +
-                              " – " +
-                              getValidParentOptions.find((opt) => opt.id === formData.parentObject)?.nameVi || ""
-                          : parentSearchTerm
-                      }
-                      onChange={(e) => {
-                        setParentSearchTerm(e.target.value)
-                        setShowParentDropdown(true)
-                        if (!e.target.value) {
-                          setFormData((d) => ({ ...d, parentObject: "" }))
-                        }
-                      }}
-                      onFocus={() => setShowParentDropdown(true)}
-                      placeholder="Tìm kiếm đối tượng gốc..."
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none pr-8"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormData((d) => ({ ...d, parentObject: "" }))
-                        setParentSearchTerm("")
-                        setShowParentDropdown(false)
-                      }}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <Icons.X size={16} />
-                    </button>
-
-                    {showParentDropdown && (
-                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        <div className="p-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFormData((d) => ({ ...d, parentObject: "" }))
-                              setParentSearchTerm("")
-                              setShowParentDropdown(false)
-                            }}
-                            className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded text-sm text-gray-600"
-                          >
-                            Không có cha
-                          </button>
-                        </div>
-                        <div className="border-t border-gray-200">
-                          {getValidParentOptions
-                            .filter(
-                              (opt) =>
-                                !parentSearchTerm ||
-                                opt.code.toLowerCase().includes(parentSearchTerm.toLowerCase()) ||
-                                opt.nameVi.toLowerCase().includes(parentSearchTerm.toLowerCase()) ||
-                                opt.nameEn.toLowerCase().includes(parentSearchTerm.toLowerCase()),
-                            )
-                            .slice(0, 50) // Limit to 50 results for performance
-                            .map((opt) => (
-                              <button
-                                key={opt.id}
-                                type="button"
-                                onClick={() => {
-                                  setFormData((d) => ({ ...d, parentObject: opt.id }))
-                                  setParentSearchTerm("")
-                                  setShowParentDropdown(false)
-                                }}
-                                className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm border-b border-gray-100 last:border-b-0"
-                              >
-                                <div className="font-medium text-gray-900">{opt.code}</div>
-                                <div className="text-gray-600 text-xs">{opt.nameVi}</div>
-                                {opt.nameEn && <div className="text-gray-500 text-xs">{opt.nameEn}</div>}
-                              </button>
-                            ))}
-                          {getValidParentOptions.filter(
-                            (opt) =>
-                              !parentSearchTerm ||
-                              opt.code.toLowerCase().includes(parentSearchTerm.toLowerCase()) ||
-                              opt.nameVi.toLowerCase().includes(parentSearchTerm.toLowerCase()) ||
-                              opt.nameEn.toLowerCase().includes(parentSearchTerm.toLowerCase()),
-                          ).length === 0 &&
-                            parentSearchTerm && (
-                              <div className="px-3 py-4 text-center text-gray-500 text-sm">
-                                Không tìm thấy kết quả cho "{parentSearchTerm}"
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <select
+                    value={formData.parentObject}
+                    onChange={e => setFormData(d => ({ ...d, parentObject: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                  >
+                    <option value="">Không có cha</option>
+                    {getValidParentOptions.map(opt => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.code} – {opt.nameVi}
+                      </option>
+                    ))}
+                  </select>
+                  {editingItem && getValidParentOptions.length < doiTuongList.length - 1 && (
+                    <div className="mt-1 text-xs text-amber-600 flex items-center">
+                      <Icons.Info size={12} className="mr-1" />
+                      Một số tùy chọn bị ẩn để tránh vòng lặp phân cấp
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1197,20 +993,21 @@ const CostObjectPage: React.FC = () => {
                     Tên tiếng Việt <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="text"
-                    required
+                    type="text" required
                     value={formData.nameVi}
-                    onChange={(e) => setFormData((d) => ({ ...d, nameVi: e.target.value }))}
+                    onChange={e => setFormData(d => ({ ...d, nameVi: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập tên tiếng Việt"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Anh</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tên tiếng Anh
+                  </label>
                   <input
                     type="text"
                     value={formData.nameEn}
-                    onChange={(e) => setFormData((d) => ({ ...d, nameEn: e.target.value }))}
+                    onChange={e => setFormData(d => ({ ...d, nameEn: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập tên tiếng Anh"
                   />
@@ -1218,20 +1015,24 @@ const CostObjectPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Hàn</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tên tiếng Hàn
+                  </label>
                   <input
                     type="text"
                     value={formData.nameKo}
-                    onChange={(e) => setFormData((d) => ({ ...d, nameKo: e.target.value }))}
+                    onChange={e => setFormData(d => ({ ...d, nameKo: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập tên tiếng Hàn"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ghi chú</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ghi chú
+                  </label>
                   <textarea
                     value={formData.notes}
-                    onChange={(e) => setFormData((d) => ({ ...d, notes: e.target.value }))}
+                    onChange={e => setFormData(d => ({ ...d, notes: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập ghi chú"
                   />
@@ -1240,18 +1041,15 @@ const CostObjectPage: React.FC = () => {
 
               {/* Buttons */}
               <div className="flex justify-end space-x-4 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
+                <button type="button" onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
                   Hủy
                 </button>
-                <button
-                  type="submit"
+                <button type="submit"
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2"
                 >
-                  <Icons.Save size={16} /> <span>{editingItem ? "Cập nhật" : "Thêm mới"}</span>
+                  <Icons.Save size={16}/> <span>{editingItem ? 'Cập nhật' : 'Thêm mới'}</span>
                 </button>
               </div>
             </form>
@@ -1259,7 +1057,7 @@ const CostObjectPage: React.FC = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default CostObjectPage
+export default CostObjectPage;

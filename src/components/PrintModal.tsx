@@ -1047,4 +1047,4 @@ export default function PrintModal({ isOpen, onClose, data, companyInfo }: Print
       `}</style>
     </>
   )
-}
+} 

@@ -1,47 +1,65 @@
-"use client"
+"use client";
 
 // CostObjectPage.tsx
 
-import type React from "react"
-import { useState, useEffect, useMemo, useCallback } from "react"
-import * as Icons from "lucide-react"
+import type React from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import * as Icons from "lucide-react";
 
-import ExcelImportModal from "./ExcelImportModal"
-import PrintModal from "./PrintModal"
-import Pagination from "./Pagination/Pagination"
+import ExcelImportModal from "./ExcelImportModal";
+import PrintModal from "./PrintModal";
+import Pagination from "./Pagination/Pagination";
 
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
-  id: string
-  code: string
-  nameVi: string
-  nameEn: string
-  nameKo: string
-  parentObject: string // id cha hoặc '' nếu root
-  notes: string
-  createdDate: string
-  status: "active" | "inactive"
+  id: string;
+  code: string;
+  nameVi: string;
+  nameEn: string;
+  nameKo: string;
+  parentObject: string; // id cha hoặc '' nếu root
+  notes: string;
+  createdDate: string;
+  status: "active" | "inactive";
 }
 
 interface ColumnConfig {
-  id: string
-  dataField: string
-  displayName: string
-  width: number
-  visible: boolean
-  pinned: boolean
-  originalOrder: number
+  id: string;
+  dataField: string;
+  displayName: string;
+  width: number;
+  visible: boolean;
+  pinned: boolean;
+  originalOrder: number;
 }
 
 // Tạo dữ liệu mẫu lớn để test hiệu suất
 const generateMockData = (count: number): DoiTuongTapHopChiPhi[] => {
-  const data: DoiTuongTapHopChiPhi[] = []
-  const departments = ["Sản Xuất", "Marketing", "Kế Toán", "IT", "Nhân Sự", "Kinh Doanh", "Vận Hành", "Chất Lượng"]
-  const subDepts = ["Team A", "Team B", "Team C", "Phòng Ban", "Bộ Phận", "Chi Nhánh"]
+  const data: DoiTuongTapHopChiPhi[] = [];
+  const departments = [
+    "Sản Xuất",
+    "Marketing",
+    "Kế Toán",
+    "IT",
+    "Nhân Sự",
+    "Kinh Doanh",
+    "Vận Hành",
+    "Chất Lượng",
+  ];
+  const subDepts = [
+    "Team A",
+    "Team B",
+    "Team C",
+    "Phòng Ban",
+    "Bộ Phận",
+    "Chi Nhánh",
+  ];
 
   for (let i = 1; i <= count; i++) {
-    const isParent = i <= Math.floor(count * 0.3) // 30% là parent
-    const parentId = isParent ? "0" : Math.floor(Math.random() * Math.floor(count * 0.3) + 1).toString()
+    const isParent = i <= Math.floor(count * 0.3); // 30% là parent
+    const parentId = isParent
+      ? "0"
+      : Math.floor(Math.random() * Math.floor(count * 0.3) + 1).toString();
 
     data.push({
       id: i.toString(),
@@ -57,42 +75,48 @@ const generateMockData = (count: number): DoiTuongTapHopChiPhi[] => {
         : `${subDepts[i % subDepts.length]} ${departments[i % departments.length]}`,
       parentObject: parentId,
       notes: `Ghi chú cho đối tượng ${i}`,
-      createdDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1)
+      createdDate: new Date(
+        2024,
+        Math.floor(Math.random() * 12),
+        Math.floor(Math.random() * 28) + 1,
+      )
         .toISOString()
         .split("T")[0],
       status: "active",
-    })
+    });
   }
 
-  return data
-}
+  return data;
+};
 
 const CostObjectPage: React.FC = () => {
   // --- State dữ liệu ---
   const [doiTuongList, setDoiTuongList] = useState<DoiTuongTapHopChiPhi[]>(
     () => generateMockData(1000), // Tạo 1000 bản ghi để test
-  )
+  );
 
   // Modal Excel
-  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false)
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   // Modal Print
-  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   // Hàm xử lý import từ Excel với các phương pháp khác nhau
   const handleImportFromExcel = useCallback(
     (rows: any[], method: "add" | "update" | "overwrite") => {
-      console.log("Processing import with method:", method)
-      console.log("Import data:", rows)
-      console.log("Current data count:", doiTuongList.length)
+      console.log("Processing import with method:", method);
+      console.log("Import data:", rows);
+      console.log("Current data count:", doiTuongList.length);
 
       if (method === "overwrite") {
         setDoiTuongList((prevList) => {
-          const updatedList = [...prevList] // Start with a copy of the current list
-          let addedCount = 0
-          let updatedCount = 0
+          const updatedList = [...prevList]; // Start with a copy of the current list
+          let addedCount = 0;
+          let updatedCount = 0;
 
           rows.forEach((row, idx) => {
-            const existingIndex = updatedList.findIndex((item) => item.code === row.code)
+            const existingIndex = updatedList.findIndex(
+              (item) => item.code === row.code,
+            );
 
             if (existingIndex !== -1) {
               // Update existing record
@@ -103,8 +127,8 @@ const CostObjectPage: React.FC = () => {
                 nameKo: row.nameKo || updatedList[existingIndex].nameKo,
                 parentObject: row.parentObject || "0", // Use "0" if parentObject is empty/invalid
                 notes: row.notes || updatedList[existingIndex].notes,
-              }
-              updatedCount++
+              };
+              updatedCount++;
             } else {
               // Add new record
               const newItem: DoiTuongTapHopChiPhi = {
@@ -117,25 +141,27 @@ const CostObjectPage: React.FC = () => {
                 notes: row.notes || "",
                 createdDate: new Date().toISOString().split("T")[0],
                 status: "active" as const,
-              }
-              updatedList.push(newItem)
-              addedCount++
+              };
+              updatedList.push(newItem);
+              addedCount++;
             }
-          })
+          });
 
           console.log(
             `Overwrite completed. Added ${addedCount} new records, updated ${updatedCount} records. Total: ${updatedList.length}`,
-          )
-          return updatedList
-        })
+          );
+          return updatedList;
+        });
       } else if (method === "update") {
         // Cập nhật: Chỉ cập nhật các bản ghi đã tồn tại
         setDoiTuongList((prevList) => {
-          const updatedList = [...prevList]
-          let updatedCount = 0
+          const updatedList = [...prevList];
+          let updatedCount = 0;
 
           rows.forEach((row) => {
-            const existingIndex = updatedList.findIndex((item) => item.code === row.code)
+            const existingIndex = updatedList.findIndex(
+              (item) => item.code === row.code,
+            );
             if (existingIndex !== -1) {
               // Giữ nguyên ID và một số thông tin cũ, chỉ cập nhật thông tin mới
               updatedList[existingIndex] = {
@@ -143,17 +169,20 @@ const CostObjectPage: React.FC = () => {
                 nameVi: row.nameVi || updatedList[existingIndex].nameVi,
                 nameEn: row.nameEn || updatedList[existingIndex].nameEn,
                 nameKo: row.nameKo || updatedList[existingIndex].nameKo,
-                parentObject: row.parentObject || updatedList[existingIndex].parentObject,
+                parentObject:
+                  row.parentObject || updatedList[existingIndex].parentObject,
                 notes: row.notes || updatedList[existingIndex].notes,
-              }
-              updatedCount++
-              console.log(`Updated existing record: ${row.code}`)
+              };
+              updatedCount++;
+              console.log(`Updated existing record: ${row.code}`);
             }
-          })
+          });
 
-          console.log(`Update completed. Updated ${updatedCount} records out of ${rows.length} input records`)
-          return updatedList
-        })
+          console.log(
+            `Update completed. Updated ${updatedCount} records out of ${rows.length} input records`,
+          );
+          return updatedList;
+        });
       } else {
         // Thêm mới: Chỉ thêm các bản ghi mới (method === "add")
         const items = rows.map((row, idx) => ({
@@ -166,30 +195,37 @@ const CostObjectPage: React.FC = () => {
           notes: row.notes || "",
           createdDate: new Date().toISOString().split("T")[0],
           status: "active" as const,
-        }))
+        }));
 
         setDoiTuongList((prev) => {
-          const newList = [...prev, ...items]
-          console.log(`Add completed. Added ${items.length} new records. Total: ${newList.length}`)
-          return newList
-        })
+          const newList = [...prev, ...items];
+          console.log(
+            `Add completed. Added ${items.length} new records. Total: ${newList.length}`,
+          );
+          return newList;
+        });
       }
 
-      setIsExcelModalOpen(false)
+      setIsExcelModalOpen(false);
     },
     [doiTuongList.length],
-  )
+  );
 
   // Tree-view: giữ các parent đang expand
-  const [expandedParents, setExpandedParents] = useState<string[]>([])
+  const [expandedParents, setExpandedParents] = useState<string[]>([]);
   const toggleExpand = useCallback(
-    (id: string) => setExpandedParents((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])),
+    (id: string) =>
+      setExpandedParents((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+      ),
     [],
-  )
+  );
 
   // Modal thêm/sửa
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingItem, setEditingItem] = useState<DoiTuongTapHopChiPhi | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<DoiTuongTapHopChiPhi | null>(
+    null,
+  );
   const [formData, setFormData] = useState({
     code: "",
     nameVi: "",
@@ -197,22 +233,26 @@ const CostObjectPage: React.FC = () => {
     nameKo: "",
     parentObject: "0",
     notes: "",
-  })
+  });
+
+  // Parent object search states
+  const [parentSearchTerm, setParentSearchTerm] = useState("");
+  const [isParentDropdownOpen, setIsParentDropdownOpen] = useState(false);
 
   // Search, chọn, bulk, export/print, phân trang
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedItems, setSelectedItems] = useState<string[]>([])
-  const [showActionMenu, setShowActionMenu] = useState<string | null>(null)
-  const [showPrintMenu, setShowPrintMenu] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
+  const [showPrintMenu, setShowPrintMenu] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Hover state for rows
-  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null)
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
   // Toolbar states
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [showSettingsPanel, setShowSettingsPanel] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>([
     {
       id: "1",
@@ -250,170 +290,204 @@ const CostObjectPage: React.FC = () => {
       pinned: false,
       originalOrder: 3,
     },
-    { id: "5", dataField: "notes", displayName: "Ghi chú", width: 250, visible: true, pinned: false, originalOrder: 4 },
-  ])
+    {
+      id: "5",
+      dataField: "notes",
+      displayName: "Ghi chú",
+      width: 250,
+      visible: true,
+      pinned: false,
+      originalOrder: 4,
+    },
+  ]);
 
   // Memoized calculations để tối ưu hiệu suất
   const getOrderedColumns = useMemo(() => {
-    const visibleColumns = columnConfigs.filter((col) => col.visible)
-    const pinnedColumns = visibleColumns.filter((col) => col.pinned).sort((a, b) => a.originalOrder - b.originalOrder)
+    const visibleColumns = columnConfigs.filter((col) => col.visible);
+    const pinnedColumns = visibleColumns
+      .filter((col) => col.pinned)
+      .sort((a, b) => a.originalOrder - b.originalOrder);
     const unpinnedColumns = visibleColumns
       .filter((col) => !col.pinned)
-      .sort((a, b) => a.originalOrder - b.originalOrder)
+      .sort((a, b) => a.originalOrder - b.originalOrder);
 
-    return [...pinnedColumns, ...unpinnedColumns]
-  }, [columnConfigs])
+    return [...pinnedColumns, ...unpinnedColumns];
+  }, [columnConfigs]);
 
   // Tính toán vị trí sticky cho các cột
   const stickyPositions = useMemo(() => {
-    const orderedColumns = getOrderedColumns
-    const pinnedColumns = orderedColumns.filter((col) => col.pinned)
-    const positions: { [key: string]: number } = {}
+    const orderedColumns = getOrderedColumns;
+    const pinnedColumns = orderedColumns.filter((col) => col.pinned);
+    const positions: { [key: string]: number } = {};
 
-    const checkboxWidth = 30
-    let currentLeft = checkboxWidth
+    const checkboxWidth = 30;
+    let currentLeft = checkboxWidth;
 
     pinnedColumns.forEach((col) => {
-      positions[col.id] = currentLeft
-      currentLeft += col.width
-    })
+      positions[col.id] = currentLeft;
+      currentLeft += col.width;
+    });
 
-    return positions
-  }, [getOrderedColumns])
+    return positions;
+  }, [getOrderedColumns]);
 
   // Hàm để lấy style cho cột
   const getColumnStyle = useCallback(
     (column: ColumnConfig) => {
-      if (!column.pinned) return {}
+      if (!column.pinned) return {};
 
       return {
         position: "sticky" as const,
         left: stickyPositions[column.id],
         zIndex: 10,
         backgroundColor: "white",
-      }
+      };
     },
     [stickyPositions],
-  )
+  );
 
   // Hàm để lấy style cho header cột
   const getHeaderColumnStyle = useCallback(
     (column: ColumnConfig) => {
-      if (!column.pinned) return {}
+      if (!column.pinned) return {};
 
       return {
         position: "sticky" as const,
         left: stickyPositions[column.id],
         zIndex: 11,
         backgroundColor: "#fef2f2", // bg-red-50
-      }
+      };
     },
     [stickyPositions],
-  )
+  );
 
   // Tối ưu: Memoize filtered data
   const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) return doiTuongList
+    if (!searchTerm.trim()) return doiTuongList;
 
-    const lowerSearchTerm = searchTerm.toLowerCase()
+    const lowerSearchTerm = searchTerm.toLowerCase();
     return doiTuongList.filter(
       (item) =>
         item.code.toLowerCase().includes(lowerSearchTerm) ||
         item.nameVi.toLowerCase().includes(lowerSearchTerm) ||
         item.nameEn.toLowerCase().includes(lowerSearchTerm) ||
         item.nameKo.toLowerCase().includes(lowerSearchTerm),
-    )
-  }, [doiTuongList, searchTerm])
+    );
+  }, [doiTuongList, searchTerm]);
 
   // Tối ưu: Memoize children map
   const childrenMap = useMemo(() => {
-    const map: Record<string, DoiTuongTapHopChiPhi[]> = {}
+    const map: Record<string, DoiTuongTapHopChiPhi[]> = {};
     filteredData.forEach((item) => {
       if (item.parentObject && item.parentObject !== "0") {
-        map[item.parentObject] = map[item.parentObject] || []
-        map[item.parentObject].push(item)
+        map[item.parentObject] = map[item.parentObject] || [];
+        map[item.parentObject].push(item);
       }
-    })
-    return map
-  }, [filteredData])
+    });
+    return map;
+  }, [filteredData]);
 
   // Tối ưu: Memoize root items
   const rootItems = useMemo(
-    () => filteredData.filter((item) => !item.parentObject || item.parentObject === "0"),
+    () =>
+      filteredData.filter(
+        (item) => !item.parentObject || item.parentObject === "0",
+      ),
     [filteredData],
-  )
+  );
 
   // Tối ưu: Memoize flattened tree structure
   interface Flattened {
-    item: DoiTuongTapHopChiPhi
-    depth: number
+    item: DoiTuongTapHopChiPhi;
+    depth: number;
   }
 
   const flattenedItems = useMemo(() => {
-    const flattenWithDepth = (items: DoiTuongTapHopChiPhi[], depth = 0): Flattened[] =>
+    const flattenWithDepth = (
+      items: DoiTuongTapHopChiPhi[],
+      depth = 0,
+    ): Flattened[] =>
       items.reduce<Flattened[]>((acc, item) => {
-        acc.push({ item, depth })
+        acc.push({ item, depth });
         if (expandedParents.includes(item.id) && childrenMap[item.id]) {
-          acc.push(...flattenWithDepth(childrenMap[item.id], depth + 1))
+          acc.push(...flattenWithDepth(childrenMap[item.id], depth + 1));
         }
-        return acc
-      }, [])
+        return acc;
+      }, []);
 
     // Khi đang search: hiển thị flat list của filtered; nếu không: hiển thị tree-view
-    return searchTerm ? filteredData.map((item) => ({ item, depth: 0 })) : flattenWithDepth(rootItems)
-  }, [searchTerm, filteredData, rootItems, expandedParents, childrenMap])
+    return searchTerm
+      ? filteredData.map((item) => ({ item, depth: 0 }))
+      : flattenWithDepth(rootItems);
+  }, [searchTerm, filteredData, rootItems, expandedParents, childrenMap]);
 
   // Tối ưu: Memoize pagination
   const paginationData = useMemo(() => {
-    const totalPages = Math.ceil(flattenedItems.length / itemsPerPage)
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    const displayed = flattenedItems.slice(startIndex, endIndex)
+    const totalPages = Math.ceil(flattenedItems.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const displayed = flattenedItems.slice(startIndex, endIndex);
 
-    return { totalPages, startIndex, endIndex, displayed }
-  }, [flattenedItems, currentPage, itemsPerPage])
+    return { totalPages, startIndex, endIndex, displayed };
+  }, [flattenedItems, currentPage, itemsPerPage]);
 
-  const { totalPages, startIndex, endIndex, displayed } = paginationData
+  const { totalPages, startIndex, endIndex, displayed } = paginationData;
 
   // Hàm để tìm tất cả các con của một đối tượng (đệ quy)
-  const getAllChildren = useCallback((parentId: string, items: DoiTuongTapHopChiPhi[]): string[] => {
-    const children: string[] = []
-    const directChildren = items.filter((item) => item.parentObject === parentId && item.parentObject !== "0")
+  const getAllChildren = useCallback(
+    (parentId: string, items: DoiTuongTapHopChiPhi[]): string[] => {
+      const children: string[] = [];
+      const directChildren = items.filter(
+        (item) => item.parentObject === parentId && item.parentObject !== "0",
+      );
 
-    directChildren.forEach((child) => {
-      children.push(child.id)
-      children.push(...getAllChildren(child.id, items))
-    })
+      directChildren.forEach((child) => {
+        children.push(child.id);
+        children.push(...getAllChildren(child.id, items));
+      });
 
-    return children
-  }, [])
+      return children;
+    },
+    [],
+  );
 
   // Hàm kiểm tra xem đối tượng có con hay không
   const hasChildren = useCallback(
     (parentId: string): boolean => {
-      return doiTuongList.some((item) => item.parentObject === parentId && item.parentObject !== "0")
+      return doiTuongList.some(
+        (item) => item.parentObject === parentId && item.parentObject !== "0",
+      );
     },
     [doiTuongList],
-  )
+  );
 
   // Hàm lấy danh sách tên các đối tượng con
   const getChildrenNames = useCallback(
     (parentId: string): string[] => {
-      const directChildren = doiTuongList.filter((item) => item.parentObject === parentId && item.parentObject !== "0")
-      return directChildren.map((child) => `${child.code} - ${child.nameVi}`)
+      const directChildren = doiTuongList.filter(
+        (item) => item.parentObject === parentId && item.parentObject !== "0",
+      );
+      return directChildren.map((child) => `${child.code} - ${child.nameVi}`);
     },
     [doiTuongList],
-  )
+  );
 
   // --- CRUD Handlers ---
   const handleAdd = useCallback(() => {
-    setEditingItem(null)
-    setFormData({ code: "", nameVi: "", nameEn: "", nameKo: "", parentObject: "0", notes: "" })
-    setIsModalOpen(true)
-  }, [])
+    setEditingItem(null);
+    setFormData({
+      code: "",
+      nameVi: "",
+      nameEn: "",
+      nameKo: "",
+      parentObject: "0",
+      notes: "",
+    });
+    setIsModalOpen(true);
+  }, []);
 
   const handleEdit = useCallback((item: DoiTuongTapHopChiPhi) => {
-    setEditingItem(item)
+    setEditingItem(item);
     setFormData({
       code: item.code,
       nameVi: item.nameVi,
@@ -421,142 +495,161 @@ const CostObjectPage: React.FC = () => {
       nameKo: item.nameKo,
       parentObject: item.parentObject,
       notes: item.notes,
-    })
-    setIsModalOpen(true)
-    setShowActionMenu(null)
-  }, [])
+    });
+    setIsModalOpen(true);
+    setShowActionMenu(null);
+  }, []);
 
   const handleDelete = useCallback(
     (id: string) => {
       // Tìm đối tượng cần xóa
-      const itemToDelete = doiTuongList.find((item) => item.id === id)
+      const itemToDelete = doiTuongList.find((item) => item.id === id);
       if (!itemToDelete) {
-        alert("Không tìm thấy đối tượng cần xóa!")
-        return
+        alert("Không tìm thấy đối tượng cần xóa!");
+        return;
       }
 
       // Kiểm tra xem đối tượng có con hay không
       if (hasChildren(id)) {
-        const childrenNames = getChildrenNames(id)
-        const childrenList = childrenNames.slice(0, 5).join("\n") // Hiển thị tối đa 5 con đầu tiên
-        const moreChildren = childrenNames.length > 5 ? `\n... và ${childrenNames.length - 5} đối tượng khác` : ""
+        const childrenNames = getChildrenNames(id);
+        const childrenList = childrenNames.slice(0, 5).join("\n"); // Hiển thị tối đa 5 con đầu tiên
+        const moreChildren =
+          childrenNames.length > 5
+            ? `\n... và ${childrenNames.length - 5} đối tượng khác`
+            : "";
 
         alert(
           `Không thể xóa đối tượng "${itemToDelete.code} - ${itemToDelete.nameVi}" vì nó có ${childrenNames.length} đối tượng con:\n\n${childrenList}${moreChildren}\n\nVui lòng xóa tất cả các đối tượng con trước khi xóa đối tượng cha.`,
-        )
-        setShowActionMenu(null)
-        return
+        );
+        setShowActionMenu(null);
+        return;
       }
 
       // Nếu không có con, hiển thị xác nhận xóa
-      const confirmMessage = `Bạn có chắc chắn muốn xóa đối tượng "${itemToDelete.code} - ${itemToDelete.nameVi}" không?`
+      const confirmMessage = `Bạn có chắc chắn muốn xóa đối tượng "${itemToDelete.code} - ${itemToDelete.nameVi}" không?`;
 
       if (window.confirm(confirmMessage)) {
-        setDoiTuongList((prev) => prev.filter((x) => x.id !== id))
+        setDoiTuongList((prev) => prev.filter((x) => x.id !== id));
 
         // Nếu đối tượng đang được chọn, bỏ chọn nó
-        setSelectedItems((prev) => prev.filter((selectedId) => selectedId !== id))
+        setSelectedItems((prev) =>
+          prev.filter((selectedId) => selectedId !== id),
+        );
 
         // Thông báo xóa thành công
-        console.log(`Đã xóa thành công đối tượng: ${itemToDelete.code} - ${itemToDelete.nameVi}`)
+        console.log(
+          `Đã xóa thành công đối tượng: ${itemToDelete.code} - ${itemToDelete.nameVi}`,
+        );
       }
 
-      setShowActionMenu(null)
+      setShowActionMenu(null);
     },
     [doiTuongList, hasChildren, getChildrenNames],
-  )
+  );
 
   const handleBulkDelete = useCallback(() => {
     if (selectedItems.length === 0) {
-      alert("Vui lòng chọn ít nhất một đối tượng để xóa!")
-      return
+      alert("Vui lòng chọn ít nhất một đối tượng để xóa!");
+      return;
     }
 
     // Kiểm tra từng đối tượng được chọn xem có con hay không
-    const itemsWithChildren: string[] = []
-    const itemsCanDelete: string[] = []
+    const itemsWithChildren: string[] = [];
+    const itemsCanDelete: string[] = [];
 
     selectedItems.forEach((id) => {
-      const item = doiTuongList.find((x) => x.id === id)
+      const item = doiTuongList.find((x) => x.id === id);
       if (item) {
         if (hasChildren(id)) {
-          itemsWithChildren.push(`${item.code} - ${item.nameVi}`)
+          itemsWithChildren.push(`${item.code} - ${item.nameVi}`);
         } else {
-          itemsCanDelete.push(`${item.code} - ${item.nameVi}`)
+          itemsCanDelete.push(`${item.code} - ${item.nameVi}`);
         }
       }
-    })
+    });
 
     // Nếu có đối tượng có con, thông báo lỗi
     if (itemsWithChildren.length > 0) {
-      const itemsList = itemsWithChildren.slice(0, 5).join("\n")
-      const moreItems = itemsWithChildren.length > 5 ? `\n... và ${itemsWithChildren.length - 5} đối tượng khác` : ""
+      const itemsList = itemsWithChildren.slice(0, 5).join("\n");
+      const moreItems =
+        itemsWithChildren.length > 5
+          ? `\n... và ${itemsWithChildren.length - 5} đối tượng khác`
+          : "";
 
       alert(
         `Không thể xóa ${itemsWithChildren.length} đối tượng sau vì chúng có đối tượng con:\n\n${itemsList}${moreItems}\n\nVui lòng xóa tất cả các đối tượng con trước khi xóa đối tượng cha.`,
-      )
-      return
+      );
+      return;
     }
 
     // Nếu tất cả đối tượng đều có thể xóa
     if (itemsCanDelete.length > 0) {
-      const confirmMessage = `Bạn có chắc chắn muốn xóa ${itemsCanDelete.length} đối tượng đã chọn không?\n\n${itemsCanDelete.slice(0, 5).join("\n")}${itemsCanDelete.length > 5 ? `\n... và ${itemsCanDelete.length - 5} đối tượng khác` : ""}`
+      const confirmMessage = `Bạn có chắc chắn muốn xóa ${itemsCanDelete.length} đối tượng đã chọn không?\n\n${itemsCanDelete.slice(0, 5).join("\n")}${itemsCanDelete.length > 5 ? `\n... và ${itemsCanDelete.length - 5} đối tượng khác` : ""}`;
 
       if (window.confirm(confirmMessage)) {
-        setDoiTuongList((prev) => prev.filter((x) => !selectedItems.includes(x.id)))
-        setSelectedItems([])
-        console.log(`Đã xóa thành công ${itemsCanDelete.length} đối tượng`)
+        setDoiTuongList((prev) =>
+          prev.filter((x) => !selectedItems.includes(x.id)),
+        );
+        setSelectedItems([]);
+        console.log(`Đã xóa thành công ${itemsCanDelete.length} đối tượng`);
       }
     }
-  }, [selectedItems, doiTuongList, hasChildren])
+  }, [selectedItems, doiTuongList, hasChildren]);
 
   const handleSelectAll = useCallback(
-    (checked: boolean) => setSelectedItems(checked ? displayed.map(({ item }) => item.id) : []),
+    (checked: boolean) =>
+      setSelectedItems(checked ? displayed.map(({ item }) => item.id) : []),
     [displayed],
-  )
+  );
 
   const handleSelectOne = useCallback(
     (id: string, checked: boolean) =>
-      setSelectedItems((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id))),
+      setSelectedItems((prev) =>
+        checked ? [...prev, id] : prev.filter((x) => x !== id),
+      ),
     [],
-  )
+  );
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
-      e.preventDefault()
+      e.preventDefault();
       if (editingItem) {
-        setDoiTuongList((prev) => prev.map((x) => (x.id === editingItem.id ? { ...x, ...formData } : x)))
+        setDoiTuongList((prev) =>
+          prev.map((x) =>
+            x.id === editingItem.id ? { ...x, ...formData } : x,
+          ),
+        );
       } else {
         const newItem: DoiTuongTapHopChiPhi = {
           id: Date.now().toString(),
           ...formData,
           createdDate: new Date().toISOString().split("T")[0],
           status: "active",
-        }
-        setDoiTuongList((prev) => [...prev, newItem])
+        };
+        setDoiTuongList((prev) => [...prev, newItem]);
       }
-      setIsModalOpen(false)
+      setIsModalOpen(false);
     },
     [editingItem, formData],
-  )
+  );
 
   const handlePrint = useCallback((lang: "vi" | "en" | "ko") => {
-    setIsPrintModalOpen(true)
-    setShowPrintMenu(false)
-  }, [])
+    setIsPrintModalOpen(true);
+    setShowPrintMenu(false);
+  }, []);
 
   // Toolbar handlers
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true)
+    setIsRefreshing(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      console.log("Dữ liệu đã được làm mới")
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log("Dữ liệu đã được làm mới");
     } catch (error) {
-      console.error("Lỗi khi làm mới dữ liệu:", error)
+      console.error("Lỗi khi làm mới dữ liệu:", error);
     } finally {
-      setIsRefreshing(false)
+      setIsRefreshing(false);
     }
-  }, [])
+  }, []);
 
   const handleExportExcel = useCallback(() => {
     // Import thư viện xlsx động
@@ -569,15 +662,19 @@ const CostObjectPage: React.FC = () => {
           "Tên tiếng Việt": item.nameVi,
           "Tên tiếng Anh": item.nameEn,
           "Tên tiếng Hàn": item.nameKo,
-          "Đối tượng cha": item.parentObject === "0" || !item.parentObject ? "0" : item.parentObject,
+          "Đối tượng cha":
+            item.parentObject === "0" || !item.parentObject
+              ? "0"
+              : item.parentObject,
           "Ghi chú": item.notes,
           "Ngày tạo": item.createdDate,
-          "Trạng thái": item.status === "active" ? "Hoạt động" : "Không hoạt động",
-        }))
+          "Trạng thái":
+            item.status === "active" ? "Hoạt động" : "Không hoạt động",
+        }));
 
         // Tạo workbook và worksheet
-        const wb = XLSX.utils.book_new()
-        const ws = XLSX.utils.json_to_sheet(exportData)
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(exportData);
 
         // Thiết lập độ rộng cột
         const colWidths = [
@@ -590,113 +687,161 @@ const CostObjectPage: React.FC = () => {
           { wch: 40 }, // Ghi chú
           { wch: 12 }, // Ngày tạo
           { wch: 12 }, // Trạng thái
-        ]
-        ws["!cols"] = colWidths
+        ];
+        ws["!cols"] = colWidths;
 
         // Thêm worksheet vào workbook
-        XLSX.utils.book_append_sheet(wb, ws, "Đối tượng tập hợp chi phí")
+        XLSX.utils.book_append_sheet(wb, ws, "Đối tượng tập hợp chi phí");
 
         // Tạo tên file với timestamp
-        const now = new Date()
-        const timestamp = now.toISOString().slice(0, 19).replace(/:/g, "-")
-        const filename = `doi-tuong-tap-hop-chi-phi-${timestamp}.xlsx`
+        const now = new Date();
+        const timestamp = now.toISOString().slice(0, 19).replace(/:/g, "-");
+        const filename = `doi-tuong-tap-hop-chi-phi-${timestamp}.xlsx`;
 
         // Xuất file bằng cách tạo buffer và blob
         try {
-          const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" })
-          const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+          const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+          const blob = new Blob([wbout], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
 
           // Tạo link download
-          const url = URL.createObjectURL(blob)
-          const link = document.createElement("a")
-          link.href = url
-          link.download = filename
-          link.style.display = "none"
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = filename;
+          link.style.display = "none";
 
           // Thêm vào DOM, click và xóa
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
 
           // Giải phóng URL object
-          URL.revokeObjectURL(url)
+          URL.revokeObjectURL(url);
 
-          console.log(`Đã xuất ${exportData.length} bản ghi ra file Excel: ${filename}`)
+          console.log(
+            `Đã xuất ${exportData.length} bản ghi ra file Excel: ${filename}`,
+          );
         } catch (writeError) {
-          console.error("Lỗi khi tạo file Excel:", writeError)
-          alert("Có lỗi xảy ra khi tạo file Excel. Vui lòng thử lại.")
+          console.error("Lỗi khi tạo file Excel:", writeError);
+          alert("Có lỗi xảy ra khi tạo file Excel. Vui lòng thử lại.");
         }
       })
       .catch((error) => {
-        console.error("Lỗi khi tải thư viện Excel:", error)
-        alert("Có lỗi xảy ra khi tải thư viện Excel. Vui lòng thử lại.")
-      })
-  }, [displayed, doiTuongList])
+        console.error("Lỗi khi tải thư viện Excel:", error);
+        alert("Có lỗi xảy ra khi tải thư viện Excel. Vui lòng thử lại.");
+      });
+  }, [displayed, doiTuongList]);
 
-  const handleColumnConfigChange = useCallback((columnId: string, field: keyof ColumnConfig, value: any) => {
-    setColumnConfigs((prev) => prev.map((col) => (col.id === columnId ? { ...col, [field]: value } : col)))
-  }, [])
+  const handleColumnConfigChange = useCallback(
+    (columnId: string, field: keyof ColumnConfig, value: any) => {
+      setColumnConfigs((prev) =>
+        prev.map((col) =>
+          col.id === columnId ? { ...col, [field]: value } : col,
+        ),
+      );
+    },
+    [],
+  );
 
   // Pagination handlers
   const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page)
-  }, [])
+    setCurrentPage(page);
+  }, []);
 
   const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage)
-    setCurrentPage(1) // Reset to first page when changing items per page
-  }, [])
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  }, []);
 
   // Đóng dropdown khi click ngoài
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
-      const t = e.target as Element
-      if (showPrintMenu && !t.closest(".print-dropdown")) setShowPrintMenu(false)
-      if (showActionMenu && !t.closest(".action-dropdown")) setShowActionMenu(null)
-      if (showSettingsPanel && !t.closest(".settings-panel") && !t.closest(".settings-trigger")) {
-        setShowSettingsPanel(false)
+      const t = e.target as Element;
+      if (showPrintMenu && !t.closest(".print-dropdown"))
+        setShowPrintMenu(false);
+      if (showActionMenu && !t.closest(".action-dropdown"))
+        setShowActionMenu(null);
+      if (
+        showSettingsPanel &&
+        !t.closest(".settings-panel") &&
+        !t.closest(".settings-trigger")
+      ) {
+        setShowSettingsPanel(false);
       }
-    }
-    document.addEventListener("mousedown", onClickOutside)
-    return () => document.removeEventListener("mousedown", onClickOutside)
-  }, [showPrintMenu, showActionMenu, showSettingsPanel])
+      if (isParentDropdownOpen && !t.closest(".parent-dropdown")) {
+        setIsParentDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [showPrintMenu, showActionMenu, showSettingsPanel, isParentDropdownOpen]);
 
   // --- Select Đối tượng gốc: ẩn chính item đang edit và tất cả con của nó ---
   const getValidParentOptions = useMemo(() => {
     if (!editingItem) {
-      return doiTuongList
+      return doiTuongList;
     }
 
-    const childrenIds = getAllChildren(editingItem.id, doiTuongList)
-    const excludedIds = [editingItem.id, ...childrenIds]
+    const childrenIds = getAllChildren(editingItem.id, doiTuongList);
+    const excludedIds = [editingItem.id, ...childrenIds];
 
-    return doiTuongList.filter((opt) => !excludedIds.includes(opt.id))
-  }, [editingItem, doiTuongList, getAllChildren])
+    return doiTuongList.filter((opt) => !excludedIds.includes(opt.id));
+  }, [editingItem, doiTuongList, getAllChildren]);
+
+  // Filtered parent options for search
+  const filteredParentOptions = useMemo(() => {
+    if (!parentSearchTerm.trim()) {
+      return getValidParentOptions;
+    }
+
+    const lowerSearchTerm = parentSearchTerm.toLowerCase();
+    return getValidParentOptions.filter(
+      (item) =>
+        item.code.toLowerCase().includes(lowerSearchTerm) ||
+        item.nameVi.toLowerCase().includes(lowerSearchTerm) ||
+        item.nameEn.toLowerCase().includes(lowerSearchTerm) ||
+        item.nameKo.toLowerCase().includes(lowerSearchTerm)
+    );
+  }, [getValidParentOptions, parentSearchTerm]);
+
+  // Get display text for selected parent
+  const getSelectedParentText = useCallback(() => {
+    if (formData.parentObject === "0") {
+      return "Không có cha";
+    }
+    const parent = doiTuongList.find(item => item.id === formData.parentObject);
+    return parent ? `${parent.code} – ${parent.nameVi}` : "Không tìm thấy";
+  }, [formData.parentObject, doiTuongList]);
 
   // Tối ưu: Debounce search để tránh re-render liên tục
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, 300)
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-    return () => clearTimeout(timer)
-  }, [searchTerm])
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Reset về trang 1 khi search
   useEffect(() => {
-    setCurrentPage(1)
-  }, [debouncedSearchTerm])
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
 
   return (
     <div className="space-y-0">
       {/* HEADER & ACTIONS */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Đối tượng tập hợp chi phí</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Đối tượng tập hợp chi phí
+          </h1>
           <p className="text-gray-600 mt-1">
-            Quản lý các đối tượng tập hợp chi phí ({doiTuongList.length.toLocaleString()} bản ghi)
+            Quản lý các đối tượng tập hợp chi phí (
+            {doiTuongList.length.toLocaleString()} bản ghi)
           </p>
         </div>
         <div className="flex items-center space-x-3 mt-4 sm:mt-0">
@@ -706,7 +851,8 @@ const CostObjectPage: React.FC = () => {
               onClick={() => handlePrint("vi")}
               className="inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
             >
-              <Icons.Printer size={16} /> <span className="hidden sm:block">In ấn</span>
+              <Icons.Printer size={16} />{" "}
+              <span className="hidden sm:block">In ấn</span>
             </button>
           </div>
           {/* Xuất Excel */}
@@ -714,14 +860,16 @@ const CostObjectPage: React.FC = () => {
             onClick={() => setIsExcelModalOpen(true)}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-green-700"
           >
-            <Icons.Upload size={16} /> <span className="hidden sm:block">Nhập Excel</span>
+            <Icons.Upload size={16} />{" "}
+            <span className="hidden sm:block">Nhập Excel</span>
           </button>
           {/* Thêm mới */}
           <button
             onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-blue-700"
           >
-            <Icons.Plus size={16} /> <span className="hidden sm:block">Thêm mới</span>
+            <Icons.Plus size={16} />{" "}
+            <span className="hidden sm:block">Thêm mới</span>
           </button>
         </div>
       </div>
@@ -731,7 +879,10 @@ const CostObjectPage: React.FC = () => {
         <div className="block sm:flex items-center justify-between p-6">
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <Icons.Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Icons.Search
+                size={16}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
               <input
                 type="text"
                 placeholder="Tìm kiếm mã, tên…"
@@ -751,7 +902,10 @@ const CostObjectPage: React.FC = () => {
                   className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Làm mới dữ liệu"
                 >
-                  <Icons.RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+                  <Icons.RefreshCw
+                    size={16}
+                    className={isRefreshing ? "animate-spin" : ""}
+                  />
                 </button>
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                   Làm mới dữ liệu
@@ -790,7 +944,9 @@ const CostObjectPage: React.FC = () => {
 
           {selectedItems.length > 0 && (
             <div className="flex mt-4 sm:mt-0 items-center space-x-4">
-              <span className="text-sm text-gray-600">Đã chọn {selectedItems.length} mục</span>
+              <span className="text-sm text-gray-600">
+                Đã chọn {selectedItems.length} mục
+              </span>
               <button
                 onClick={handleBulkDelete}
                 className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:bg-red-700"
@@ -816,7 +972,10 @@ const CostObjectPage: React.FC = () => {
                 >
                   <input
                     type="checkbox"
-                    checked={selectedItems.length === displayed.length && displayed.length > 0}
+                    checked={
+                      selectedItems.length === displayed.length &&
+                      displayed.length > 0
+                    }
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                   />
@@ -833,7 +992,9 @@ const CostObjectPage: React.FC = () => {
                   >
                     <div className="flex items-center">
                       {col.displayName}
-                      {col.pinned && <Icons.Pin size={12} className="ml-1 text-red-500" />}
+                      {col.pinned && (
+                        <Icons.Pin size={12} className="ml-1 text-red-500" />
+                      )}
                     </div>
                   </th>
                 ))}
@@ -851,8 +1012,8 @@ const CostObjectPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {displayed.map(({ item, depth }) => {
-                const hasChildrenItems = Boolean(childrenMap[item.id]?.length)
-                const isExpanded = expandedParents.includes(item.id)
+                const hasChildrenItems = Boolean(childrenMap[item.id]?.length);
+                const isExpanded = expandedParents.includes(item.id);
 
                 return (
                   <tr
@@ -872,7 +1033,9 @@ const CostObjectPage: React.FC = () => {
                       <input
                         type="checkbox"
                         checked={selectedItems.includes(item.id)}
-                        onChange={(e) => handleSelectOne(item.id, e.target.checked)}
+                        onChange={(e) =>
+                          handleSelectOne(item.id, e.target.checked)
+                        }
                         className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                       />
                     </td>
@@ -887,33 +1050,64 @@ const CostObjectPage: React.FC = () => {
                         }}
                       >
                         {col.dataField === "code" ? (
-                          <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
+                          <div
+                            className="flex items-center"
+                            style={{ marginLeft: depth * 20 }}
+                          >
                             {hasChildrenItems && (
-                              <button onClick={() => toggleExpand(item.id)} className="ml-[-17px] mr-0">
-                                {isExpanded ? <Icons.ChevronDown size={16} /> : <Icons.ChevronRight size={16} />}
+                              <button
+                                onClick={() => toggleExpand(item.id)}
+                                className="ml-[-17px] mr-0"
+                              >
+                                {isExpanded ? (
+                                  <Icons.ChevronDown size={16} />
+                                ) : (
+                                  <Icons.ChevronRight size={16} />
+                                )}
                               </button>
                             )}
-                            <span className={depth > 0 ? "text-gray-600" : "font-medium text-gray-900"}>
-                              {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
+                            <span
+                              className={
+                                depth > 0
+                                  ? "text-gray-600"
+                                  : "font-medium text-gray-900"
+                              }
+                            >
+                              {
+                                item[
+                                  col.dataField as keyof DoiTuongTapHopChiPhi
+                                ]
+                              }
                             </span>
                           </div>
                         ) : col.dataField === "parentObject" ? (
                           <span className="text-sm text-gray-600">
                             {item.parentObject === "0" || !item.parentObject ? (
-                              <span className="text-gray-400 italic">Không có cha</span>
+                              <span className="text-gray-400 italic">
+                                Không có cha
+                              </span>
                             ) : (
                               (() => {
-                                const parent = doiTuongList.find((p) => p.id === item.parentObject)
-                                return parent ? `${parent.code} - ${parent.nameVi}` : item.parentObject
+                                const parent = doiTuongList.find(
+                                  (p) => p.id === item.parentObject,
+                                );
+                                return parent
+                                  ? `${parent.code} - ${parent.nameVi}`
+                                  : item.parentObject;
                               })()
                             )}
                           </span>
                         ) : col.dataField === "notes" ? (
-                          <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
+                          <span
+                            className="text-sm text-gray-600 truncate max-w-xs block"
+                            title={item.notes}
+                          >
                             {item.notes}
                           </span>
                         ) : (
-                          <span>{item[col.dataField as keyof DoiTuongTapHopChiPhi]}</span>
+                          <span>
+                            {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
+                          </span>
                         )}
                       </td>
                     ))}
@@ -955,14 +1149,17 @@ const CostObjectPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
 
           {filteredData.length === 0 && (
             <div className="text-center py-8">
-              <Icons.Building2 size={48} className="mx-auto text-gray-300 mb-4" />
+              <Icons.Building2
+                size={48}
+                className="mx-auto text-gray-300 mb-4"
+              />
               <p className="text-gray-500">Không tìm thấy dữ liệu nào</p>
             </div>
           )}
@@ -989,9 +1186,14 @@ const CostObjectPage: React.FC = () => {
               <div className="flex justify-between p-4 border-b ">
                 <h3 className="text-lg font-semibold text-gray-900">
                   Thiết lập bảng dữ liệu
-                  <div className="text-sm text-gray-400 ">Tùy chỉnh hiển thị các cột trong bảng dữ liệu</div>
+                  <div className="text-sm text-gray-400 ">
+                    Tùy chỉnh hiển thị các cột trong bảng dữ liệu
+                  </div>
                 </h3>
-                <button onClick={() => setShowSettingsPanel(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <button
+                  onClick={() => setShowSettingsPanel(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
                   <Icons.X size={20} className="text-gray-500" />
                 </button>
               </div>
@@ -999,18 +1201,31 @@ const CostObjectPage: React.FC = () => {
               <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-4">
                   {columnConfigs.map((column) => (
-                    <div key={column.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div
+                      key={column.id}
+                      className="border border-gray-200 rounded-lg p-4 space-y-3"
+                    >
                       {/* Checkbox và tên cột */}
                       <div className="flex items-center space-x-3">
                         <input
                           type="checkbox"
                           checked={column.visible}
-                          onChange={(e) => handleColumnConfigChange(column.id, "visible", e.target.checked)}
+                          onChange={(e) =>
+                            handleColumnConfigChange(
+                              column.id,
+                              "visible",
+                              e.target.checked,
+                            )
+                          }
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                         <div className="flex-1">
-                          <div className="font-medium text-gray-900">{column.dataField}</div>
-                          <div className="text-sm text-gray-500">Tên cột dữ liệu</div>
+                          <div className="font-medium text-gray-900">
+                            {column.dataField}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Tên cột dữ liệu
+                          </div>
                         </div>
                         {column.pinned && (
                           <div className="flex items-center text-blue-600">
@@ -1023,23 +1238,37 @@ const CostObjectPage: React.FC = () => {
                       {/* Tên hiển thị và Độ rộng cột trên cùng 1 dòng */}
                       <div className="grid grid-cols-5 gap-3">
                         <div className="col-span-3">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Tên cột hiển thị</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tên cột hiển thị
+                          </label>
                           <input
                             type="text"
                             value={column.displayName}
-                            onChange={(e) => handleColumnConfigChange(column.id, "displayName", e.target.value)}
+                            onChange={(e) =>
+                              handleColumnConfigChange(
+                                column.id,
+                                "displayName",
+                                e.target.value,
+                              )
+                            }
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             disabled={!column.visible}
                           />
                         </div>
 
                         <div className="col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Width</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Width
+                          </label>
                           <input
                             type="number"
                             value={column.width}
                             onChange={(e) =>
-                              handleColumnConfigChange(column.id, "width", Number.parseInt(e.target.value) || 100)
+                              handleColumnConfigChange(
+                                column.id,
+                                "width",
+                                Number.parseInt(e.target.value) || 100,
+                              )
                             }
                             min="50"
                             max="500"
@@ -1054,11 +1283,19 @@ const CostObjectPage: React.FC = () => {
                         <input
                           type="checkbox"
                           checked={column.pinned}
-                          onChange={(e) => handleColumnConfigChange(column.id, "pinned", e.target.checked)}
+                          onChange={(e) =>
+                            handleColumnConfigChange(
+                              column.id,
+                              "pinned",
+                              e.target.checked,
+                            )
+                          }
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           disabled={!column.visible}
                         />
-                        <label className="text-sm text-gray-700">Ghim cột bên trái</label>
+                        <label className="text-sm text-gray-700">
+                          Ghim cột bên trái
+                        </label>
                       </div>
 
                       {/* Hiển thị vị trí sticky nếu được ghim */}
@@ -1066,7 +1303,8 @@ const CostObjectPage: React.FC = () => {
                         <div className="bg-blue-50 border border-blue-200 rounded p-2">
                           <div className="text-xs text-blue-700">
                             <Icons.Info size={12} className="inline mr-1" />
-                            Vị trí sticky: {stickyPositions[column.id]}px từ trái
+                            Vị trí sticky: {stickyPositions[column.id]}px từ
+                            trái
                           </div>
                         </div>
                       )}
@@ -1126,7 +1364,7 @@ const CostObjectPage: React.FC = () => {
                         pinned: false,
                         originalOrder: 4,
                       },
-                    ])
+                    ]);
                   }}
                   className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
@@ -1172,7 +1410,10 @@ const CostObjectPage: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-900">
                 {editingItem ? "Chỉnh sửa đối tượng" : "Thêm mới đối tượng"}
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
                 <Icons.X size={20} className="text-gray-500" />
               </button>
             </div>
@@ -1187,36 +1428,111 @@ const CostObjectPage: React.FC = () => {
                     type="text"
                     required
                     value={formData.code}
-                    onChange={(e) => setFormData((d) => ({ ...d, code: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((d) => ({ ...d, code: e.target.value }))
+                    }
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập mã đối tượng"
                   />
                 </div>
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Đối tượng gốc
                     {editingItem && (
-                      <span className="text-xs text-gray-500 ml-2">(Ẩn đối tượng hiện tại và các con)</span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        (Ẩn đối tượng hiện tại và các con)
+                      </span>
                     )}
                   </label>
-                  <select
-                    value={formData.parentObject}
-                    onChange={(e) => setFormData((d) => ({ ...d, parentObject: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                  >
-                    <option value="0">Không có cha</option>
-                    {getValidParentOptions.map((opt) => (
-                      <option key={opt.id} value={opt.id}>
-                        {opt.code} – {opt.nameVi}
-                      </option>
-                    ))}
-                  </select>
-                  {editingItem && getValidParentOptions.length < doiTuongList.length - 1 && (
-                    <div className="mt-1 text-xs text-amber-600 flex items-center">
-                      <Icons.Info size={12} className="mr-1" />
-                      Một số tùy chọn bị ẩn để tránh vòng lặp phân cấp
+                  <div className="relative parent-dropdown">
+                    <div
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none cursor-pointer bg-white flex items-center justify-between"
+                      onClick={() => setIsParentDropdownOpen(!isParentDropdownOpen)}
+                    >
+                      <span className="text-gray-900">{getSelectedParentText()}</span>
+                      <Icons.ChevronDown
+                        size={16}
+                        className={`text-gray-400 transition-transform ${
+                          isParentDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
                     </div>
-                  )}
+                    
+                    {isParentDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                        <div className="p-2 border-b border-gray-200">
+                          <div className="relative">
+                            <Icons.Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input
+                              type="text"
+                              placeholder="Tìm kiếm đối tượng gốc..."
+                              value={parentSearchTerm}
+                              onChange={(e) => setParentSearchTerm(e.target.value)}
+                              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="max-h-48 overflow-y-auto">
+                          <div
+                            className="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
+                            onClick={() => {
+                              setFormData((d) => ({ ...d, parentObject: "0" }));
+                              setIsParentDropdownOpen(false);
+                              setParentSearchTerm("");
+                            }}
+                          >
+                            <div className="flex items-center">
+                              <Icons.Home size={14} className="mr-2 text-gray-400" />
+                              <span className="text-gray-600 text-sm">Không có cha</span>
+                            </div>
+                          </div>
+                          
+                          {filteredParentOptions.length > 0 ? (
+                            filteredParentOptions.map((opt) => (
+                              <div
+                                key={opt.id}
+                                className={`px-3 py-2 hover:bg-gray-50 cursor-pointer ${
+                                  formData.parentObject === opt.id ? "bg-red-50 text-red-700" : ""
+                                }`}
+                                onClick={() => {
+                                  setFormData((d) => ({ ...d, parentObject: opt.id }));
+                                  setIsParentDropdownOpen(false);
+                                  setParentSearchTerm("");
+                                }}
+                              >
+                                <div className="flex items-center">
+                                  <Icons.Folder size={14} className="mr-2 text-gray-400" />
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {opt.code}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {opt.nameVi}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="px-3 py-4 text-center text-gray-500 text-sm">
+                              <Icons.Search size={16} className="mx-auto mb-1 text-gray-400" />
+                              Không tìm thấy đối tượng nào
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {editingItem &&
+                    getValidParentOptions.length < doiTuongList.length - 1 && (
+                      <div className="mt-1 text-xs text-amber-600 flex items-center">
+                        <Icons.Info size={12} className="mr-1" />
+                        Một số tùy chọn bị ẩn để tránh vòng lặp phân cấp
+                      </div>
+                    )}
                 </div>
               </div>
 
@@ -1230,17 +1546,23 @@ const CostObjectPage: React.FC = () => {
                     type="text"
                     required
                     value={formData.nameVi}
-                    onChange={(e) => setFormData((d) => ({ ...d, nameVi: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((d) => ({ ...d, nameVi: e.target.value }))
+                    }
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập tên tiếng Việt"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Anh</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tên tiếng Anh
+                  </label>
                   <input
                     type="text"
                     value={formData.nameEn}
-                    onChange={(e) => setFormData((d) => ({ ...d, nameEn: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((d) => ({ ...d, nameEn: e.target.value }))
+                    }
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập tên tiếng Anh"
                   />
@@ -1248,20 +1570,28 @@ const CostObjectPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Hàn</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tên tiếng Hàn
+                  </label>
                   <input
                     type="text"
                     value={formData.nameKo}
-                    onChange={(e) => setFormData((d) => ({ ...d, nameKo: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((d) => ({ ...d, nameKo: e.target.value }))
+                    }
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập tên tiếng Hàn"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ghi chú</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ghi chú
+                  </label>
                   <textarea
                     value={formData.notes}
-                    onChange={(e) => setFormData((d) => ({ ...d, notes: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((d) => ({ ...d, notes: e.target.value }))
+                    }
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
                     placeholder="Nhập ghi chú"
                   />
@@ -1281,7 +1611,8 @@ const CostObjectPage: React.FC = () => {
                   type="submit"
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2"
                 >
-                  <Icons.Save size={16} /> <span>{editingItem ? "Cập nhật" : "Thêm mới"}</span>
+                  <Icons.Save size={16} />{" "}
+                  <span>{editingItem ? "Cập nhật" : "Thêm mới"}</span>
                 </button>
               </div>
             </form>
@@ -1289,7 +1620,7 @@ const CostObjectPage: React.FC = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default CostObjectPage
+export default CostObjectPage;

@@ -532,29 +532,79 @@ const CostObjectPage: React.FC = () => {
   }, [])
 
   const handleExportExcel = useCallback(() => {
-    const orderedColumns = getOrderedColumns
-    const headers = orderedColumns.map((col) => col.displayName).join(",")
+    // Import thư viện xlsx động
+    import("xlsx")
+      .then((XLSX) => {
+        // Chuẩn bị dữ liệu xuất với tất cả các cột
+        const exportData = doiTuongList.map((item) => ({
+          ID: item.id,
+          "Mã đối tượng": item.code,
+          "Tên tiếng Việt": item.nameVi,
+          "Tên tiếng Anh": item.nameEn,
+          "Tên tiếng Hàn": item.nameKo,
+          "Đối tượng cha": item.parentObject === "0" || !item.parentObject ? "0" : item.parentObject,
+          "Ghi chú": item.notes,
+          "Ngày tạo": item.createdDate,
+          "Trạng thái": item.status === "active" ? "Hoạt động" : "Không hoạt động",
+        }))
 
-    const rows = displayed.map(({ item }) => {
-      return orderedColumns
-        .map((col) => {
-          const value = item[col.dataField as keyof DoiTuongTapHopChiPhi] || ""
-          return `"${value}"`
-        })
-        .join(",")
-    })
+        // Tạo workbook và worksheet
+        const wb = XLSX.utils.book_new()
+        const ws = XLSX.utils.json_to_sheet(exportData)
 
-    const csvContent = [headers, ...rows].join("\n")
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", "doi-tuong-tap-hop-chi-phi.csv")
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }, [getOrderedColumns, displayed])
+        // Thiết lập độ rộng cột
+        const colWidths = [
+          { wch: 10 }, // ID
+          { wch: 15 }, // Mã đối tượng
+          { wch: 25 }, // Tên tiếng Việt
+          { wch: 25 }, // Tên tiếng Anh
+          { wch: 25 }, // Tên tiếng Hàn
+          { wch: 30 }, // Đối tượng cha
+          { wch: 40 }, // Ghi chú
+          { wch: 12 }, // Ngày tạo
+          { wch: 12 }, // Trạng thái
+        ]
+        ws["!cols"] = colWidths
+
+        // Thêm worksheet vào workbook
+        XLSX.utils.book_append_sheet(wb, ws, "Đối tượng tập hợp chi phí")
+
+        // Tạo tên file với timestamp
+        const now = new Date()
+        const timestamp = now.toISOString().slice(0, 19).replace(/:/g, "-")
+        const filename = `doi-tuong-tap-hop-chi-phi-${timestamp}.xlsx`
+
+        // Xuất file bằng cách tạo buffer và blob
+        try {
+          const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" })
+          const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+
+          // Tạo link download
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement("a")
+          link.href = url
+          link.download = filename
+          link.style.display = "none"
+
+          // Thêm vào DOM, click và xóa
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+
+          // Giải phóng URL object
+          URL.revokeObjectURL(url)
+
+          console.log(`Đã xuất ${exportData.length} bản ghi ra file Excel: ${filename}`)
+        } catch (writeError) {
+          console.error("Lỗi khi tạo file Excel:", writeError)
+          alert("Có lỗi xảy ra khi tạo file Excel. Vui lòng thử lại.")
+        }
+      })
+      .catch((error) => {
+        console.error("Lỗi khi tải thư viện Excel:", error)
+        alert("Có lỗi xảy ra khi tải thư viện Excel. Vui lòng thử lại.")
+      })
+  }, [displayed, doiTuongList])
 
   const handleColumnConfigChange = useCallback((columnId: string, field: keyof ColumnConfig, value: any) => {
     setColumnConfigs((prev) => prev.map((col) => (col.id === columnId ? { ...col, [field]: value } : col)))

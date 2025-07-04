@@ -3,6 +3,7 @@ import { FileText, Users, Package, TrendingUp, Calculator, Receipt } from 'lucid
 import CompanyManagement from './CompanyManagement';
 import ProfilePage from './ProfilePage';
 import HelpSupportPage from './HelpSupportPage';
+import BankManagementPage from './BankManagementPage';
 
 interface ModuleContentProps {
   moduleId: string;
@@ -93,6 +94,10 @@ export default function ModuleContent({ moduleId }: ModuleContentProps) {
   // Handle specific module cases
   if (moduleId === 'company-management') {
     return <CompanyManagement />;
+  }
+
+  if (moduleId === 'bank-management') {
+    return <BankManagementPage />;
   }
 
   if (moduleId === 'profile') {

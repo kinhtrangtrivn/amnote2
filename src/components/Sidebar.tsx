@@ -165,7 +165,7 @@ const iconMap: { [key: string]: React.ReactNode } = {
 };
 
 export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobile = false }: SidebarProps) {
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['basic-data']); // Auto-expand basic-data by default
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   const toggleSubmenu = (menuId: string) => {
@@ -317,19 +317,13 @@ export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobil
                           <button
                             key={subItem.id}
                             onClick={() => onMenuSelect(subItem.id)}
-                            className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-all duration-200 relative ${
+                            className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
                               activeMenu === subItem.id
-                                ? 'bg-red-50 text-red-700 font-medium shadow-sm border-l-2 border-red-500'
+                                ? 'bg-red-50 text-red-700'
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                             }`}
                           >
-                            {/* Active indicator dot */}
-                            {activeMenu === subItem.id && (
-                              <div className="absolute left-1 top-1/2 transform -translate-y-1/2 w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                            )}
-                            <span className={activeMenu === subItem.id ? 'ml-2' : ''}>
-                              {subItem.title}
-                            </span>
+                            {subItem.title}
                           </button>
                         ))}
                       </div>

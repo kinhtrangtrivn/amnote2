@@ -149,8 +149,13 @@ export default function ExcelImportModal({ isOpen, onClose, onImport, existingDa
             .map((header: any) => String(header).trim())
 
           setAvailableColumns(headers)
-          // Auto-map columns when they are loaded
-          autoMapColumns(headers)
+
+          // NEW LOGIC: Check if the first column is "ID" and adjust auto-mapping
+          if (headers.length > 0 && headers[0].toLowerCase() === "id") {
+            autoMapColumns(headers.slice(1)) // Start mapping from the second column
+          } else {
+            autoMapColumns(headers) // Map all columns
+          }
         }
       } catch (error) {
         console.error("Error loading columns:", error)

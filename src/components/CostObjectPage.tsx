@@ -86,21 +86,48 @@ const CostObjectPage: React.FC = () => {
       console.log("Current data count:", doiTuongList.length)
 
       if (method === "overwrite") {
-        // Ghi đè: Xóa tất cả dữ liệu cũ và thay thế bằng dữ liệu mới
-        const items = rows.map((row, idx) => ({
-          id: `${Date.now()}-${idx}`,
-          code: row.code,
-          nameVi: row.nameVi,
-          nameEn: row.nameEn || "",
-          nameKo: row.nameKo || "",
-          parentObject: row.parentObject || "0",
-          notes: row.notes || "",
-          createdDate: new Date().toISOString().split("T")[0],
-          status: "active" as const,
-        }))
+        setDoiTuongList((prevList) => {
+          const updatedList = [...prevList] // Start with a copy of the current list
+          let addedCount = 0
+          let updatedCount = 0
 
-        setDoiTuongList(items)
-        console.log("Overwrite completed. New data count:", items.length)
+          rows.forEach((row, idx) => {
+            const existingIndex = updatedList.findIndex((item) => item.code === row.code)
+
+            if (existingIndex !== -1) {
+              // Update existing record
+              updatedList[existingIndex] = {
+                ...updatedList[existingIndex],
+                nameVi: row.nameVi || updatedList[existingIndex].nameVi,
+                nameEn: row.nameEn || updatedList[existingIndex].nameEn,
+                nameKo: row.nameKo || updatedList[existingIndex].nameKo,
+                parentObject: row.parentObject || "0", // Use "0" if parentObject is empty/invalid
+                notes: row.notes || updatedList[existingIndex].notes,
+              }
+              updatedCount++
+            } else {
+              // Add new record
+              const newItem: DoiTuongTapHopChiPhi = {
+                id: `${Date.now()}-${idx}`, // Generate a unique ID
+                code: row.code,
+                nameVi: row.nameVi,
+                nameEn: row.nameEn || "",
+                nameKo: row.nameKo || "",
+                parentObject: row.parentObject || "0", // Use "0" if parentObject is empty/invalid
+                notes: row.notes || "",
+                createdDate: new Date().toISOString().split("T")[0],
+                status: "active" as const,
+              }
+              updatedList.push(newItem)
+              addedCount++
+            }
+          })
+
+          console.log(
+            `Overwrite completed. Added ${addedCount} new records, updated ${updatedCount} records. Total: ${updatedList.length}`,
+          )
+          return updatedList
+        })
       } else if (method === "update") {
         // Cập nhật: Chỉ cập nhật các bản ghi đã tồn tại
         setDoiTuongList((prevList) => {

@@ -9,7 +9,7 @@ import * as Icons from "lucide-react"
 import ExcelImportModal from "./ExcelImportModal"
 import PrintModal from "./PrintModal"
 import Pagination from "./Pagination/Pagination"
-import { SearchableSelect } from "./components/searchable-select"
+import { SearchableSelect } from "./searchable-select"
 
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {

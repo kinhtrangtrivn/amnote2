@@ -203,6 +203,8 @@ const CostObjectPage: React.FC = () => {
 
   // Search, chọn, bulk, export/print, phân trang
   const [searchTerm, setSearchTerm] = useState("")
+  // Debounced value must be declared before it's used in filteredData
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null)
   const [showPrintMenu, setShowPrintMenu] = useState(false)
@@ -214,6 +216,7 @@ const CostObjectPage: React.FC = () => {
 
   // Toolbar states
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>(() => {
     // Tải cấu hình từ localStorage khi khởi tạo state
@@ -345,9 +348,9 @@ const CostObjectPage: React.FC = () => {
 
   // Tối ưu: Memoize filtered data
   const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) return doiTuongList
+    if (!debouncedSearchTerm.trim()) return doiTuongList
 
-    const lowerSearchTerm = searchTerm.toLowerCase()
+    const lowerSearchTerm = debouncedSearchTerm.toLowerCase()
     return doiTuongList.filter(
       (item) =>
         item.code.toLowerCase().includes(lowerSearchTerm) ||
@@ -355,7 +358,7 @@ const CostObjectPage: React.FC = () => {
         item.nameEn.toLowerCase().includes(lowerSearchTerm) ||
         item.nameKo.toLowerCase().includes(lowerSearchTerm),
     )
-  }, [doiTuongList, searchTerm])
+  }, [doiTuongList, debouncedSearchTerm])
 
   // Tối ưu: Memoize children map
   const childrenMap = useMemo(() => {
@@ -772,14 +775,17 @@ const CostObjectPage: React.FC = () => {
   }, [editingItem, doiTuongList, getAllChildren])
 
   // Tối ưu: Debounce search để tránh re-render liên tục
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
+  // const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm)
-    }, 300)
+      setIsSearching(false) // Tắt trạng thái tìm kiếm sau khi debounce
+    }, 1000) // 1 giây debounce
 
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(handler)
+    }
   }, [searchTerm])
 
   // Reset về trang 1 khi search
@@ -834,7 +840,10 @@ const CostObjectPage: React.FC = () => {
                 type="text"
                 placeholder="Tìm kiếm mã, tên…"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  setIsSearching(true) // Kích hoạt trạng thái tìm kiếm
+                }}
                 className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
               />
             </div>
@@ -901,14 +910,15 @@ const CostObjectPage: React.FC = () => {
 
         {/* TABLE */}
         <div className="overflow-x-auto relative">
-          {isRefreshing && (
-            <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center z-30">
-              <div className="flex flex-col items-center">
-                <Icons.Loader2 className="h-8 w-8 animate-spin text-red-600 mb-4" />
-                <p className="text-gray-700">Đang tải dữ liệu...</p>
+          {isRefreshing ||
+            (isSearching && (
+              <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center z-30">
+                <div className="flex flex-col items-center">
+                  <Icons.Loader2 className="h-8 w-8 animate-spin text-red-600 mb-4" />
+                  <p className="text-gray-700">Đang tải dữ liệu...</p>
+                </div>
               </div>
-            </div>
-          )}
+            ))}
           <table className="min-w-full table-auto">
             <thead className="bg-red-50">
               <tr>
@@ -956,7 +966,7 @@ const CostObjectPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {isRefreshing
+              {isRefreshing || isSearching
                 ? // Skeleton rows when loading
                   Array.from({ length: itemsPerPage }).map((_, rowIndex) => (
                     <tr key={`skeleton-${rowIndex}`} className="animate-pulse">

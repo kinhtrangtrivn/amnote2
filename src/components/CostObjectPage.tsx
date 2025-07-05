@@ -3,7 +3,7 @@
 // CostObjectPage.tsx
 
 import type React from "react"
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import * as Icons from "lucide-react"
 
 import ExcelImportModal from "./ExcelImportModal"
@@ -474,6 +474,36 @@ const CostObjectPage: React.FC = () => {
     setShowActionMenu(null)
   }, [])
 
+  const [showUndoNotification, setShowUndoNotification] = useState(false)
+  const [undoMessage, setUndoMessage] = useState("")
+  const [previousDoiTuongList, setPreviousDoiTuongList] = useState<DoiTuongTapHopChiPhi[] | null>(null)
+  const undoTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const hideUndoNotification = useCallback(() => {
+    setShowUndoNotification(false)
+    setUndoMessage("")
+    setPreviousDoiTuongList(null) // Clear previous state so undo is not possible after hide
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current)
+      undoTimerRef.current = null
+    }
+  }, [])
+
+  const showNotificationWithTimeout = useCallback(
+    (message: string) => {
+      setUndoMessage(message)
+      setShowUndoNotification(true)
+
+      if (undoTimerRef.current) {
+        clearTimeout(undoTimerRef.current)
+      }
+      undoTimerRef.current = setTimeout(() => {
+        hideUndoNotification()
+      }, 5000) // Hide after 5 seconds
+    },
+    [hideUndoNotification],
+  )
+
   const handleDelete = useCallback(
     (id: string) => {
       // Tìm đối tượng cần xóa
@@ -500,18 +530,19 @@ const CostObjectPage: React.FC = () => {
       const confirmMessage = `Bạn có chắc chắn muốn xóa đối tượng "${itemToDelete.code} - ${itemToDelete.nameVi}" không?`
 
       if (window.confirm(confirmMessage)) {
+        setPreviousDoiTuongList([...doiTuongList]) // Lưu trạng thái hiện tại trước khi xóa
         setDoiTuongList((prev) => prev.filter((x) => x.id !== id))
 
         // Nếu đối tượng đang được chọn, bỏ chọn nó
         setSelectedItems((prev) => prev.filter((selectedId) => selectedId !== id))
 
-        // Thông báo xóa thành công
-        console.log(`Đã xóa thành công đối tượng: ${itemToDelete.code} - ${itemToDelete.nameVi}`)
+        // Hiển thị popup hoàn tác
+        showNotificationWithTimeout(`Đã xóa 1 dòng: "${itemToDelete.code} - ${itemToDelete.nameVi}"`)
       }
 
       setShowActionMenu(null)
     },
-    [doiTuongList, hasChildren, getChildrenNames],
+    [doiTuongList, hasChildren, getChildrenNames, showNotificationWithTimeout],
   )
 
   const handleBulkDelete = useCallback(() => {
@@ -560,11 +591,21 @@ const CostObjectPage: React.FC = () => {
     // Pass 2: If no undeletable parents, then all selected items can be deleted
     const confirmMessage = `Bạn có chắc chắn muốn xóa ${selectedItems.length} đối tượng đã chọn không?`
     if (window.confirm(confirmMessage)) {
+      const itemsToDeleteCount = selectedItems.length
+      setPreviousDoiTuongList([...doiTuongList]) // Lưu trạng thái hiện tại trước khi xóa
       setDoiTuongList((prev) => prev.filter((x) => !selectedItemsSet.has(x.id)))
       setSelectedItems([])
-      console.log(`Đã xóa thành công ${selectedItems.length} đối tượng`)
+      showNotificationWithTimeout(`Đã xóa ${itemsToDeleteCount} dòng.`)
     }
-  }, [selectedItems, doiTuongList, getAllChildrenObjects])
+  }, [selectedItems, doiTuongList, getAllChildrenObjects, showNotificationWithTimeout])
+
+  const handleUndo = useCallback(() => {
+    if (previousDoiTuongList) {
+      setDoiTuongList(previousDoiTuongList)
+      setSelectedItems([]) // Clear selections after undo
+      hideUndoNotification()
+    }
+  }, [previousDoiTuongList, hideUndoNotification])
 
   const handleSelectAll = useCallback(
     (checked: boolean) => setSelectedItems(checked ? displayed.map(({ item }) => item.id) : []),
@@ -688,7 +729,7 @@ const CostObjectPage: React.FC = () => {
         console.error("Lỗi khi tải thư viện Excel:", error)
         alert("Có lỗi xảy ra khi tải thư viện Excel. Vui lòng thử lại.")
       })
-  }, [displayed, doiTuongList])
+  }, [doiTuongList])
 
   const handleColumnConfigChange = useCallback((columnId: string, field: keyof ColumnConfig, value: any) => {
     setColumnConfigs((prev) => prev.map((col) => (col.id === columnId ? { ...col, [field]: value } : col)))
@@ -1405,6 +1446,20 @@ const CostObjectPage: React.FC = () => {
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {showUndoNotification && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-4 z-50">
+          <span>{undoMessage}</span>
+          <button
+            onClick={handleUndo}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors"
+          >
+            Hoàn tác
+          </button>
+          <button onClick={hideUndoNotification} className="text-gray-400 hover:text-white p-1 rounded-full">
+            <Icons.X size={16} />
+          </button>
         </div>
       )}
     </div>

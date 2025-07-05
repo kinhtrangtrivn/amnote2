@@ -2,24 +2,17 @@
 
 // CostObjectPage.tsx
 
-import React, { useState, useEffect, useMemo, useCallback } from "react"
+import type React from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import * as Icons from "lucide-react"
 
 import ExcelImportModal from "./ExcelImportModal"
 import PrintModal from "./PrintModal"
 import Pagination from "./Pagination/Pagination"
-// Thêm các import cần thiết cho SearchableSelect
-import { Check, ChevronDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-
-// Xóa dòng import SearchableSelect cũ
-// -import { SearchableSelect } from "@/components/searchable-select"
 
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
-  id: string
+  id: string 
   code: string
   nameVi: string
   nameEn: string
@@ -38,80 +31,6 @@ interface ColumnConfig {
   visible: boolean
   pinned: boolean
   originalOrder: number
-}
-
-// Thêm định nghĩa SearchableSelectProps ngay sau interface ColumnConfig
-interface SearchableSelectProps {
-  options: { value: string; label: string }[]
-  value: string
-  onValueChange: (value: string) => void
-  placeholder?: string
-  emptyMessage?: string
-  className?: string
-  disabled?: boolean
-}
-
-// Thêm component SearchableSelect ngay sau định nghĩa các interfaces
-function SearchableSelect({
-  options,
-  value,
-  onValueChange,
-  placeholder = "Select an option...",
-  emptyMessage = "No options found.",
-  className,
-  disabled,
-}: SearchableSelectProps) {
-  const [open, setOpen] = React.useState(false)
-  const [searchValue, setSearchValue] = React.useState("")
-
-  const selectedOption = React.useMemo(() => options.find((option) => option.value === value), [options, value])
-
-  const filteredOptions = React.useMemo(() => {
-    if (!searchValue) return options
-    const lowerSearchValue = searchValue.toLowerCase()
-    return options.filter((option) => option.label.toLowerCase().includes(lowerSearchValue))
-  }, [options, searchValue])
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn("w-full justify-between", className)}
-          disabled={disabled}
-        >
-          {selectedOption ? selectedOption.label : placeholder}
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
-          <CommandInput placeholder={placeholder} value={searchValue} onValueChange={setSearchValue} />
-          <CommandList>
-            <CommandEmpty>{emptyMessage}</CommandEmpty>
-            <CommandGroup>
-              {filteredOptions.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.label} // Use label for command search
-                  onSelect={() => {
-                    onValueChange(option.value)
-                    setOpen(false)
-                    setSearchValue("") // Clear search after selection
-                  }}
-                >
-                  <Check className={cn("mr-2 h-4 w-4", value === option.value ? "opacity-100" : "opacity-0")} />
-                  {option.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  )
 }
 
 // Tạo dữ liệu mẫu lớn để test hiệu suất
@@ -486,22 +405,6 @@ const CostObjectPage: React.FC = () => {
     [doiTuongList],
   )
 
-  // Hàm để tìm tất cả các con của một đối tượng (đệ quy), trả về đối tượng
-  const getAllChildrenObjects = useCallback(
-    (parentId: string, items: DoiTuongTapHopChiPhi[]): DoiTuongTapHopChiPhi[] => {
-      const children: DoiTuongTapHopChiPhi[] = []
-      const directChildren = items.filter((item) => item.parentObject === parentId && item.parentObject !== "0")
-
-      directChildren.forEach((child) => {
-        children.push(child)
-        children.push(...getAllChildrenObjects(child.id, items))
-      })
-
-      return children
-    },
-    [],
-  )
-
   // --- CRUD Handlers ---
   const handleAdd = useCallback(() => {
     setEditingItem(null)
@@ -569,51 +472,43 @@ const CostObjectPage: React.FC = () => {
       return
     }
 
-    const selectedItemsSet = new Set(selectedItems)
-    const undeletableParentMessages: string[] = []
+    // Kiểm tra từng đối tượng được chọn xem có con hay không
+    const itemsWithChildren: string[] = []
+    const itemsCanDelete: string[] = []
 
-    // Pass 1: Identify all selected parents that cannot be deleted
-    for (const selectedId of selectedItems) {
-      const item = doiTuongList.find((x) => x.id === selectedId)
-      if (!item) continue // Should not happen if selectedItems are valid IDs
-
-      const childrenObjects = getAllChildrenObjects(item.id, doiTuongList)
-
-      if (childrenObjects.length > 0) {
-        // This is a parent item
-        const missingChildren = childrenObjects.filter((child) => !selectedItemsSet.has(child.id))
-
-        if (missingChildren.length > 0) {
-          // Parent is selected, but not all its children are selected
-          const missingNames =
-            missingChildren
-              .map((c) => `${c.code} - ${c.nameVi}`)
-              .slice(0, 3)
-              .join(", ") + (missingChildren.length > 3 ? "..." : "")
-          undeletableParentMessages.push(
-            `Đối tượng "${item.code} - ${item.nameVi}" không thể xóa vì còn con chưa chọn: ${missingNames}`,
-          )
+    selectedItems.forEach((id) => {
+      const item = doiTuongList.find((x) => x.id === id)
+      if (item) {
+        if (hasChildren(id)) {
+          itemsWithChildren.push(`${item.code} - ${item.nameVi}`)
+        } else {
+          itemsCanDelete.push(`${item.code} - ${item.nameVi}`)
         }
       }
-    }
+    })
 
-    if (undeletableParentMessages.length > 0) {
+    // Nếu có đối tượng có con, thông báo lỗi
+    if (itemsWithChildren.length > 0) {
+      const itemsList = itemsWithChildren.slice(0, 5).join("\n")
+      const moreItems = itemsWithChildren.length > 5 ? `\n... và ${itemsWithChildren.length - 5} đối tượng khác` : ""
+
       alert(
-        `Không thể xóa các đối tượng sau:\n\n${undeletableParentMessages.join(
-          "\n",
-        )}\n\nVui lòng bỏ chọn hoặc chọn tất cả các đối tượng con của chúng.`,
+        `Không thể xóa ${itemsWithChildren.length} đối tượng sau vì chúng có đối tượng con:\n\n${itemsList}${moreItems}\n\nVui lòng xóa tất cả các đối tượng con trước khi xóa đối tượng cha.`,
       )
       return
     }
 
-    // Pass 2: If no undeletable parents, then all selected items can be deleted
-    const confirmMessage = `Bạn có chắc chắn muốn xóa ${selectedItems.length} đối tượng đã chọn không?`
-    if (window.confirm(confirmMessage)) {
-      setDoiTuongList((prev) => prev.filter((x) => !selectedItemsSet.has(x.id)))
-      setSelectedItems([])
-      console.log(`Đã xóa thành công ${selectedItems.length} đối tượng`)
+    // Nếu tất cả đối tượng đều có thể xóa
+    if (itemsCanDelete.length > 0) {
+      const confirmMessage = `Bạn có chắc chắn muốn xóa ${itemsCanDelete.length} đối tượng đã chọn không?\n\n${itemsCanDelete.slice(0, 5).join("\n")}${itemsCanDelete.length > 5 ? `\n... và ${itemsCanDelete.length - 5} đối tượng khác` : ""}`
+
+      if (window.confirm(confirmMessage)) {
+        setDoiTuongList((prev) => prev.filter((x) => !selectedItems.includes(x.id)))
+        setSelectedItems([])
+        console.log(`Đã xóa thành công ${itemsCanDelete.length} đối tượng`)
+      }
     }
-  }, [selectedItems, doiTuongList, getAllChildrenObjects])
+  }, [selectedItems, doiTuongList, hasChildren])
 
   const handleSelectAll = useCallback(
     (checked: boolean) => setSelectedItems(checked ? displayed.map(({ item }) => item.id) : []),
@@ -654,8 +549,7 @@ const CostObjectPage: React.FC = () => {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate network delay
-      setDoiTuongList(generateMockData(1000)) // Regenerate mock data
+      await new Promise((resolve) => setTimeout(resolve, 1000))
       console.log("Dữ liệu đã được làm mới")
     } catch (error) {
       console.error("Lỗi khi làm mới dữ liệu:", error)
@@ -737,7 +631,7 @@ const CostObjectPage: React.FC = () => {
         console.error("Lỗi khi tải thư viện Excel:", error)
         alert("Có lỗi xảy ra khi tải thư viện Excel. Vui lòng thử lại.")
       })
-  }, [doiTuongList])
+  }, [displayed, doiTuongList])
 
   const handleColumnConfigChange = useCallback((columnId: string, field: keyof ColumnConfig, value: any) => {
     setColumnConfigs((prev) => prev.map((col) => (col.id === columnId ? { ...col, [field]: value } : col)))
@@ -778,13 +672,6 @@ const CostObjectPage: React.FC = () => {
 
     return doiTuongList.filter((opt) => !excludedIds.includes(opt.id))
   }, [editingItem, doiTuongList, getAllChildren])
-
-  const getValidParentOptionsForSelect = useMemo(() => {
-    return getValidParentOptions.map((opt) => ({
-      value: opt.id,
-      label: `${opt.code} – ${opt.nameVi}`,
-    }))
-  }, [getValidParentOptions])
 
   // Tối ưu: Debounce search để tránh re-render liên tục
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
@@ -915,15 +802,7 @@ const CostObjectPage: React.FC = () => {
         </div>
 
         {/* TABLE */}
-        <div className="overflow-x-auto relative">
-          {isRefreshing && (
-            <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center z-30">
-              <div className="flex flex-col items-center">
-                <Icons.Loader2 className="h-8 w-8 animate-spin text-red-600 mb-4" />
-                <p className="text-gray-700">Đang tải dữ liệu...</p>
-              </div>
-            </div>
-          )}
+        <div className="overflow-x-auto">
           <table className="min-w-full table-auto">
             <thead className="bg-red-50">
               <tr>
@@ -971,160 +850,117 @@ const CostObjectPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {isRefreshing
-                ? // Skeleton rows when loading
-                  Array.from({ length: itemsPerPage }).map((_, rowIndex) => (
-                    <tr key={`skeleton-${rowIndex}`} className="animate-pulse">
-                      <td
-                        className="sticky left-0 z-15 bg-white px-4 py-3"
-                        style={{
-                          width: "30px",
-                          minWidth: "30px",
-                          maxWidth: "30px",
-                        }}
-                      >
-                        <div className="h-4 w-4 bg-gray-200 rounded" />
-                      </td>
-                      {getOrderedColumns.map((col) => (
-                        <td
-                          key={`skeleton-${rowIndex}-${col.id}`}
-                          className="px-4 py-3"
-                          style={{
-                            width: col.width,
-                            minWidth: col.width,
-                            ...getColumnStyle(col),
-                          }}
-                        >
-                          <div className="h-4 bg-gray-200 rounded" style={{ width: `${Math.random() * 70 + 30}%` }} />
-                        </td>
-                      ))}
-                      <td
-                        className="sticky right-0 z-10 bg-white px-1 py-3 text-center"
-                        style={{
-                          width: "100px",
-                          minWidth: "100px",
-                          maxWidth: "100px",
-                        }}
-                      >
-                        <div className="flex items-center justify-center space-x-2">
-                          <div className="h-6 w-6 bg-gray-200 rounded-lg" />
-                          <div className="h-6 w-6 bg-gray-200 rounded-lg" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                : // Actual data rows when not loading
-                  displayed.map(({ item, depth }) => {
-                    const hasChildrenItems = Boolean(childrenMap[item.id]?.length)
-                    const isExpanded = expandedParents.includes(item.id)
+              {displayed.map(({ item, depth }) => {
+                const hasChildrenItems = Boolean(childrenMap[item.id]?.length)
+                const isExpanded = expandedParents.includes(item.id)
 
-                    return (
-                      <tr
-                        key={item.id}
-                        className="group hover:bg-gray-50"
-                        onMouseEnter={() => setHoveredRowId(item.id)}
-                        onMouseLeave={() => setHoveredRowId(null)}
+                return (
+                  <tr
+                    key={item.id}
+                    className="group hover:bg-gray-50"
+                    onMouseEnter={() => setHoveredRowId(item.id)}
+                    onMouseLeave={() => setHoveredRowId(null)}
+                  >
+                    <td
+                      className="sticky left-0 z-15 bg-white px-4 py-3 group-hover:bg-gray-50"
+                      style={{
+                        width: "30px",
+                        minWidth: "30px",
+                        maxWidth: "30px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.includes(item.id)}
+                        onChange={(e) => handleSelectOne(item.id, e.target.checked)}
+                        className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                      />
+                    </td>
+                    {getOrderedColumns.map((col) => (
+                      <td
+                        key={col.id}
+                        className="px-4 py-3 group-hover:bg-gray-50"
+                        style={{
+                          width: col.width,
+                          minWidth: col.width,
+                          ...getColumnStyle(col),
+                        }}
                       >
-                        <td
-                          className="sticky left-0 z-15 bg-white px-4 py-3 group-hover:bg-gray-50"
-                          style={{
-                            width: "30px",
-                            minWidth: "30px",
-                            maxWidth: "30px",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedItems.includes(item.id)}
-                            onChange={(e) => handleSelectOne(item.id, e.target.checked)}
-                            className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-                          />
-                        </td>
-                        {getOrderedColumns.map((col) => (
-                          <td
-                            key={col.id}
-                            className="px-4 py-3 group-hover:bg-gray-50"
-                            style={{
-                              width: col.width,
-                              minWidth: col.width,
-                              ...getColumnStyle(col),
-                            }}
-                          >
-                            {col.dataField === "code" ? (
-                              <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
-                                {hasChildrenItems && (
-                                  <button onClick={() => toggleExpand(item.id)} className="ml-[-17px] mr-0">
-                                    {isExpanded ? <Icons.ChevronDown size={16} /> : <Icons.ChevronRight size={16} />}
-                                  </button>
-                                )}
-                                <span className={depth > 0 ? "text-gray-600" : "font-medium text-gray-900"}>
-                                  {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
-                                </span>
-                              </div>
-                            ) : col.dataField === "parentObject" ? (
-                              <span className="text-sm text-gray-600">
-                                {item.parentObject === "0" || !item.parentObject ? (
-                                  <span className="text-gray-400 italic">Không có cha</span>
-                                ) : (
-                                  (() => {
-                                    const parent = doiTuongList.find((p) => p.id === item.parentObject)
-                                    return parent ? `${parent.code} - ${parent.nameVi}` : item.parentObject
-                                  })()
-                                )}
-                              </span>
-                            ) : col.dataField === "notes" ? (
-                              <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
-                                {item.notes}
-                              </span>
-                            ) : (
-                              <span>{item[col.dataField as keyof DoiTuongTapHopChiPhi]}</span>
+                        {col.dataField === "code" ? (
+                          <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
+                            {hasChildrenItems && (
+                              <button onClick={() => toggleExpand(item.id)} className="ml-[-17px] mr-0">
+                                {isExpanded ? <Icons.ChevronDown size={16} /> : <Icons.ChevronRight size={16} />}
+                              </button>
                             )}
-                          </td>
-                        ))}
-                        {/* Cột hành động (Edit/Delete) */}
-                        <td
-                          className="sticky group-hover:bg-gray-50 right-0 z-10 px-1 py-3 text-center"
-                          style={{
-                            width: "100px",
-                            minWidth: "100px",
-                            maxWidth: "100px",
-                          }}
-                        >
-                          <div className="flex items-center justify-center space-x-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
-                            {/* Sửa */}
-                            <div className="relative">
-                              <button
-                                onClick={() => handleEdit(item)}
-                                className="peer p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                              >
-                                <Icons.Edit size={16} />
-                              </button>
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 peer-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
-                                Sửa
-                              </div>
-                            </div>
-
-                            {/* Xóa */}
-                            <div className="relative">
-                              <button
-                                onClick={() => handleDelete(item.id)}
-                                className="peer p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                <Icons.Trash2 size={16} />
-                              </button>
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 peer-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
-                                Xóa
-                              </div>
-                            </div>
+                            <span className={depth > 0 ? "text-gray-600" : "font-medium text-gray-900"}>
+                              {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
+                            </span>
                           </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                        ) : col.dataField === "parentObject" ? (
+                          <span className="text-sm text-gray-600">
+                            {item.parentObject === "0" || !item.parentObject ? (
+                              <span className="text-gray-400 italic">Không có cha</span>
+                            ) : (
+                              (() => {
+                                const parent = doiTuongList.find((p) => p.id === item.parentObject)
+                                return parent ? `${parent.code} - ${parent.nameVi}` : item.parentObject
+                              })()
+                            )}
+                          </span>
+                        ) : col.dataField === "notes" ? (
+                          <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
+                            {item.notes}
+                          </span>
+                        ) : (
+                          <span>{item[col.dataField as keyof DoiTuongTapHopChiPhi]}</span>
+                        )}
+                      </td>
+                    ))}
+                    {/* Cột hành động (Edit/Delete) */}
+                    <td
+                      className="sticky group-hover:bg-gray-50 right-0 z-10 px-1 py-3 text-center"
+                      style={{
+                        width: "100px",
+                        minWidth: "100px",
+                        maxWidth: "100px",
+                      }}
+                    >
+                      <div className="flex items-center justify-center space-x-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
+                        {/* Sửa */}
+                        <div className="relative">
+                          <button
+                            onClick={() => handleEdit(item)}
+                            className="peer p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          >
+                            <Icons.Edit size={16} />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 peer-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+                            Sửa
+                          </div>
+                        </div>
+
+                        {/* Xóa */}
+                        <div className="relative">
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="peer p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Icons.Trash2 size={16} />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 peer-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+                            Xóa
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
 
-          {filteredData.length === 0 && !isRefreshing && (
+          {filteredData.length === 0 && (
             <div className="text-center py-8">
               <Icons.Building2 size={48} className="mx-auto text-gray-300 mb-4" />
               <p className="text-gray-500">Không tìm thấy dữ liệu nào</p>
@@ -1331,8 +1167,8 @@ const CostObjectPage: React.FC = () => {
       {/* MODAL THÊM/SỬA */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b py-4 px-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-xl font-bold text-gray-900">
                 {editingItem ? "Chỉnh sửa đối tượng" : "Thêm mới đối tượng"}
               </h2>
@@ -1340,84 +1176,87 @@ const CostObjectPage: React.FC = () => {
                 <Icons.X size={20} className="text-gray-500" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              <form onSubmit={handleSubmit} className="p-6 space-y-6 px-4">
-                {/* Mã & Đối tượng gốc */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Mã đối tượng <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.code}
-                      onChange={(e) => setFormData((d) => ({ ...d, code: e.target.value }))}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                      placeholder="Nhập mã đối tượng"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Đối tượng gốc
-                      {editingItem && (
-                        <span className="text-xs text-gray-500 ml-2">(Ẩn đối tượng hiện tại và các con)</span>
-                      )}
-                    </label>
-                    <SearchableSelect
-                      options={[{ value: "0", label: "Không có cha" }, ...getValidParentOptionsForSelect]}
-                      value={formData.parentObject}
-                      onValueChange={(value) => setFormData((d) => ({ ...d, parentObject: value }))}
-                      placeholder="Chọn đối tượng gốc"
-                      emptyMessage="Không tìm thấy đối tượng"
-                      className="w-full"
-                    />
-                    {editingItem && getValidParentOptions.length < doiTuongList.length - 1 && (
-                      <div className="mt-1 text-xs text-amber-600 flex items-center">
-                        <Icons.Info size={12} className="mr-1" />
-                        Một số tùy chọn bị ẩn để tránh vòng lặp phân cấp
-                      </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* Mã & Đối tượng gốc */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mã đối tượng <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.code}
+                    onChange={(e) => setFormData((d) => ({ ...d, code: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                    placeholder="Nhập mã đối tượng"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Đối tượng gốc
+                    {editingItem && (
+                      <span className="text-xs text-gray-500 ml-2">(Ẩn đối tượng hiện tại và các con)</span>
                     )}
-                  </div>
+                  </label>
+                  <select
+                    value={formData.parentObject}
+                    onChange={(e) => setFormData((d) => ({ ...d, parentObject: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                  >
+                    <option value="0">Không có cha</option>
+                    {getValidParentOptions.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.code} – {opt.nameVi}
+                      </option>
+                    ))}
+                  </select>
+                  {editingItem && getValidParentOptions.length < doiTuongList.length - 1 && (
+                    <div className="mt-1 text-xs text-amber-600 flex items-center">
+                      <Icons.Info size={12} className="mr-1" />
+                      Một số tùy chọn bị ẩn để tránh vòng lặp phân cấp
+                    </div>
+                  )}
                 </div>
+              </div>
 
-                {/* Tên tiếng Việt, tiếng Anh, tiếng Hàn */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tên tiếng Việt <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.nameVi}
-                      onChange={(e) => setFormData((d) => ({ ...d, nameVi: e.target.value }))}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                      placeholder="Nhập tên tiếng Việt"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Anh</label>
-                    <input
-                      type="text"
-                      value={formData.nameEn}
-                      onChange={(e) => setFormData((d) => ({ ...d, nameEn: e.target.value }))}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                      placeholder="Nhập tên tiếng Anh"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Hàn</label>
-                    <input
-                      type="text"
-                      value={formData.nameKo}
-                      onChange={(e) => setFormData((d) => ({ ...d, nameKo: e.target.value }))}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                      placeholder="Nhập tên tiếng Hàn"
-                    />
-                  </div>
+              {/* Tên & Ghi chú */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tên tiếng Việt <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.nameVi}
+                    onChange={(e) => setFormData((d) => ({ ...d, nameVi: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                    placeholder="Nhập tên tiếng Việt"
+                  />
                 </div>
-                {/* Ghi chú */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Anh</label>
+                  <input
+                    type="text"
+                    value={formData.nameEn}
+                    onChange={(e) => setFormData((d) => ({ ...d, nameEn: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                    placeholder="Nhập tên tiếng Anh"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Hàn</label>
+                  <input
+                    type="text"
+                    value={formData.nameKo}
+                    onChange={(e) => setFormData((d) => ({ ...d, nameKo: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                    placeholder="Nhập tên tiếng Hàn"
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Ghi chú</label>
                   <textarea
@@ -1427,29 +1266,30 @@ const CostObjectPage: React.FC = () => {
                     placeholder="Nhập ghi chú"
                   />
                 </div>
-              </form>
-            </div>
-            {/* Buttons */}
-            <div className="flex justify-end space-x-4 pt-4 border-t flex-shrink-0 pr-4 pb-4">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2"
-              >
-                <Icons.Save size={16} /> <span>{editingItem ? "Cập nhật" : "Thêm mới"}</span>
-              </button>
-            </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end space-x-4 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2"
+                >
+                  <Icons.Save size={16} /> <span>{editingItem ? "Cập nhật" : "Thêm mới"}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
     </div>
-  )
+  ) 
 }
 
 export default CostObjectPage

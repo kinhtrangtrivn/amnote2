@@ -405,6 +405,22 @@ const CostObjectPage: React.FC = () => {
     [doiTuongList],
   )
 
+  // Hàm để tìm tất cả các con của một đối tượng (đệ quy), trả về đối tượng
+  const getAllChildrenObjects = useCallback(
+    (parentId: string, items: DoiTuongTapHopChiPhi[]): DoiTuongTapHopChiPhi[] => {
+      const children: DoiTuongTapHopChiPhi[] = []
+      const directChildren = items.filter((item) => item.parentObject === parentId && item.parentObject !== "0")
+
+      directChildren.forEach((child) => {
+        children.push(child)
+        children.push(...getAllChildrenObjects(child.id, items))
+      })
+
+      return children
+    },
+    [],
+  )
+
   // --- CRUD Handlers ---
   const handleAdd = useCallback(() => {
     setEditingItem(null)
@@ -472,43 +488,51 @@ const CostObjectPage: React.FC = () => {
       return
     }
 
-    // Kiểm tra từng đối tượng được chọn xem có con hay không
-    const itemsWithChildren: string[] = []
-    const itemsCanDelete: string[] = []
+    const selectedItemsSet = new Set(selectedItems)
+    const undeletableParentMessages: string[] = []
 
-    selectedItems.forEach((id) => {
-      const item = doiTuongList.find((x) => x.id === id)
-      if (item) {
-        if (hasChildren(id)) {
-          itemsWithChildren.push(`${item.code} - ${item.nameVi}`)
-        } else {
-          itemsCanDelete.push(`${item.code} - ${item.nameVi}`)
+    // Pass 1: Identify all selected parents that cannot be deleted
+    for (const selectedId of selectedItems) {
+      const item = doiTuongList.find((x) => x.id === selectedId)
+      if (!item) continue // Should not happen if selectedItems are valid IDs
+
+      const childrenObjects = getAllChildrenObjects(item.id, doiTuongList)
+
+      if (childrenObjects.length > 0) {
+        // This is a parent item
+        const missingChildren = childrenObjects.filter((child) => !selectedItemsSet.has(child.id))
+
+        if (missingChildren.length > 0) {
+          // Parent is selected, but not all its children are selected
+          const missingNames =
+            missingChildren
+              .map((c) => `${c.code} - ${c.nameVi}`)
+              .slice(0, 3)
+              .join(", ") + (missingChildren.length > 3 ? "..." : "")
+          undeletableParentMessages.push(
+            `Đối tượng "${item.code} - ${item.nameVi}" không thể xóa vì còn con chưa chọn: ${missingNames}`,
+          )
         }
       }
-    })
+    }
 
-    // Nếu có đối tượng có con, thông báo lỗi
-    if (itemsWithChildren.length > 0) {
-      const itemsList = itemsWithChildren.slice(0, 5).join("\n")
-      const moreItems = itemsWithChildren.length > 5 ? `\n... và ${itemsWithChildren.length - 5} đối tượng khác` : ""
-
+    if (undeletableParentMessages.length > 0) {
       alert(
-        `Không thể xóa ${itemsWithChildren.length} đối tượng sau vì chúng có đối tượng con:\n\n${itemsList}${moreItems}\n\nVui lòng xóa tất cả các đối tượng con trước khi xóa đối tượng cha.`,
+        `Không thể xóa các đối tượng sau:\n\n${undeletableParentMessages.join(
+          "\n",
+        )}\n\nVui lòng bỏ chọn hoặc chọn tất cả các đối tượng con của chúng.`,
       )
       return
     }
 
-    // Nếu tất cả đối tượng đều có thể xóa
-    if (itemsCanDelete.length > 0) {
-      const confirmMessage = `Bạn có chắc chắn muốn xóa ${itemsCanDelete.length} đối tượng đã chọn không?\n\n${itemsCanDelete.slice(0, 5).join("\n")}${itemsCanDelete.length > 5 ? `\n... và ${itemsCanDelete.length - 5} đối tượng khác` : ""}`
-
-      if (window.confirm(confirmMessage)) {
-        setDoiTuongList((prev) => prev.filter((x) => !selectedItems.includes(x.id)))
-        setSelectedItems([])
-        console.log(`Đã xóa thành công ${itemsCanDelete.length} đối tượng`)
-      }
+    // Pass 2: If no undeletable parents, then all selected items can be deleted
+    const confirmMessage = `Bạn có chắc chắn muốn xóa ${selectedItems.length} đối tượng đã chọn không?`
+    if (window.confirm(confirmMessage)) {
+      setDoiTuongList((prev) => prev.filter((x) => !selectedItemsSet.has(x.id)))
+      setSelectedItems([])
+      console.log(`Đã xóa thành công ${selectedItems.length} đối tượng`)
     }
-  }, [selectedItems, doiTuongList, hasChildren])
+  }, [selectedItems, doiTuongList, getAllChildrenObjects])
 
   const handleSelectAll = useCallback(
     (checked: boolean) => setSelectedItems(checked ? displayed.map(({ item }) => item.id) : []),

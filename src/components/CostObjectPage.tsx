@@ -10,6 +10,8 @@ import ExcelImportModal from "./ExcelImportModal"
 import PrintModal from "./PrintModal"
 import Pagination from "./Pagination/Pagination"
 
+const LOCAL_STORAGE_COLUMN_CONFIGS_KEY = "costObjectTableColumnConfigs"
+
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
   id: string
@@ -213,45 +215,75 @@ const CostObjectPage: React.FC = () => {
   // Toolbar states
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
-  const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>([
-    {
-      id: "1",
-      dataField: "code",
-      displayName: "Mã đối tượng",
-      width: 150,
-      visible: true,
-      pinned: false,
-      originalOrder: 0,
-    },
-    {
-      id: "2",
-      dataField: "nameVi",
-      displayName: "Tiếng Việt",
-      width: 200,
-      visible: true,
-      pinned: false,
-      originalOrder: 1,
-    },
-    {
-      id: "3",
-      dataField: "nameEn",
-      displayName: "Tiếng Anh",
-      width: 200,
-      visible: true,
-      pinned: false,
-      originalOrder: 2,
-    },
-    {
-      id: "4",
-      dataField: "nameKo",
-      displayName: "Tiếng Hàn",
-      width: 200,
-      visible: true,
-      pinned: false,
-      originalOrder: 3,
-    },
-    { id: "5", dataField: "notes", displayName: "Ghi chú", width: 250, visible: true, pinned: false, originalOrder: 4 },
-  ])
+  const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>(() => {
+    // Tải cấu hình từ localStorage khi khởi tạo state
+    if (typeof window !== "undefined") {
+      const savedConfigs = localStorage.getItem(LOCAL_STORAGE_COLUMN_CONFIGS_KEY)
+      if (savedConfigs) {
+        try {
+          return JSON.parse(savedConfigs)
+        } catch (e) {
+          console.error("Failed to parse column configs from localStorage", e)
+          // Fallback to default if parsing fails
+        }
+      }
+    }
+    // Cấu hình mặc định nếu không có trong localStorage hoặc lỗi
+    return [
+      {
+        id: "1",
+        dataField: "code",
+        displayName: "Mã đối tượng",
+        width: 150,
+        visible: true,
+        pinned: false,
+        originalOrder: 0,
+      },
+      {
+        id: "2",
+        dataField: "nameVi",
+        displayName: "Tiếng Việt",
+        width: 200,
+        visible: true,
+        pinned: false,
+        originalOrder: 1,
+      },
+      {
+        id: "3",
+        dataField: "nameEn",
+        displayName: "Tiếng Anh",
+        width: 200,
+        visible: true,
+        pinned: false,
+        originalOrder: 2,
+      },
+      {
+        id: "4",
+        dataField: "nameKo",
+        displayName: "Tiếng Hàn",
+        width: 200,
+        visible: true,
+        pinned: false,
+        originalOrder: 3,
+      },
+      {
+        id: "5",
+        dataField: "notes",
+        displayName: "Ghi chú",
+        width: 250,
+        visible: true,
+        pinned: false,
+        originalOrder: 4,
+      },
+    ]
+  })
+
+  // Lưu cấu hình vào localStorage mỗi khi columnConfigs thay đổi
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_COLUMN_CONFIGS_KEY, JSON.stringify(columnConfigs))
+    }
+  }, [columnConfigs])
 
   // Memoized calculations để tối ưu hiệu suất
   const getOrderedColumns = useMemo(() => {
@@ -1156,7 +1188,7 @@ const CostObjectPage: React.FC = () => {
                 <button
                   onClick={() => {
                     // Reset to default
-                    setColumnConfigs([
+                    const defaultConfigs = [
                       {
                         id: "1",
                         dataField: "code",
@@ -1202,14 +1234,25 @@ const CostObjectPage: React.FC = () => {
                         pinned: false,
                         originalOrder: 4,
                       },
-                    ])
+                    ]
+                    setColumnConfigs(defaultConfigs)
+                    // Lưu cài đặt mặc định vào localStorage ngay lập tức
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem(LOCAL_STORAGE_COLUMN_CONFIGS_KEY, JSON.stringify(defaultConfigs))
+                    }
                   }}
                   className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Đặt lại mặc định
                 </button>
                 <button
-                  onClick={() => setShowSettingsPanel(false)}
+                  onClick={() => {
+                    // Lưu cài đặt hiện tại vào localStorage khi áp dụng
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem(LOCAL_STORAGE_COLUMN_CONFIGS_KEY, JSON.stringify(columnConfigs))
+                    }
+                    setShowSettingsPanel(false)
+                  }}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   Áp dụng

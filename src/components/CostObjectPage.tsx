@@ -2,14 +2,21 @@
 
 // CostObjectPage.tsx
 
-import type React from "react"
-import { useState, useEffect, useMemo, useCallback } from "react"
+import React, { useState, useEffect, useMemo, useCallback } from "react"
 import * as Icons from "lucide-react"
 
 import ExcelImportModal from "./ExcelImportModal"
 import PrintModal from "./PrintModal"
 import Pagination from "./Pagination/Pagination"
-import { SearchableSelect } from "./searchable-select"
+// Thêm các import cần thiết cho SearchableSelect
+import { Check, ChevronDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+
+// Xóa dòng import SearchableSelect cũ
+// -import { SearchableSelect } from "@/components/searchable-select"
 
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
@@ -32,6 +39,80 @@ interface ColumnConfig {
   visible: boolean
   pinned: boolean
   originalOrder: number
+}
+
+// Thêm định nghĩa SearchableSelectProps ngay sau interface ColumnConfig
+interface SearchableSelectProps {
+  options: { value: string; label: string }[]
+  value: string
+  onValueChange: (value: string) => void
+  placeholder?: string
+  emptyMessage?: string
+  className?: string
+  disabled?: boolean
+}
+
+// Thêm component SearchableSelect ngay sau định nghĩa các interfaces
+function SearchableSelect({
+  options,
+  value,
+  onValueChange,
+  placeholder = "Select an option...",
+  emptyMessage = "No options found.",
+  className,
+  disabled,
+}: SearchableSelectProps) {
+  const [open, setOpen] = React.useState(false)
+  const [searchValue, setSearchValue] = React.useState("")
+
+  const selectedOption = React.useMemo(() => options.find((option) => option.value === value), [options, value])
+
+  const filteredOptions = React.useMemo(() => {
+    if (!searchValue) return options
+    const lowerSearchValue = searchValue.toLowerCase()
+    return options.filter((option) => option.label.toLowerCase().includes(lowerSearchValue))
+  }, [options, searchValue])
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn("w-full justify-between", className)}
+          disabled={disabled}
+        >
+          {selectedOption ? selectedOption.label : placeholder}
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <Command>
+          <CommandInput placeholder={placeholder} value={searchValue} onValueChange={setSearchValue} />
+          <CommandList>
+            <CommandEmpty>{emptyMessage}</CommandEmpty>
+            <CommandGroup>
+              {filteredOptions.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.label} // Use label for command search
+                  onSelect={() => {
+                    onValueChange(option.value)
+                    setOpen(false)
+                    setSearchValue("") // Clear search after selection
+                  }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", value === option.value ? "opacity-100" : "opacity-0")} />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 // Tạo dữ liệu mẫu lớn để test hiệu suất

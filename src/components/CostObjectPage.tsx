@@ -12,7 +12,7 @@ import Pagination from "./Pagination/Pagination"
 
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
-  id: string 
+  id: string
   code: string
   nameVi: string
   nameEn: string
@@ -405,6 +405,22 @@ const CostObjectPage: React.FC = () => {
     [doiTuongList],
   )
 
+  // Hàm để tìm tất cả các con của một đối tượng (đệ quy), trả về đối tượng
+  const getAllChildrenObjects = useCallback(
+    (parentId: string, items: DoiTuongTapHopChiPhi[]): DoiTuongTapHopChiPhi[] => {
+      const children: DoiTuongTapHopChiPhi[] = []
+      const directChildren = items.filter((item) => item.parentObject === parentId && item.parentObject !== "0")
+
+      directChildren.forEach((child) => {
+        children.push(child)
+        children.push(...getAllChildrenObjects(child.id, items))
+      })
+
+      return children
+    },
+    [],
+  )
+
   // --- CRUD Handlers ---
   const handleAdd = useCallback(() => {
     setEditingItem(null)
@@ -472,43 +488,51 @@ const CostObjectPage: React.FC = () => {
       return
     }
 
-    // Kiểm tra từng đối tượng được chọn xem có con hay không
-    const itemsWithChildren: string[] = []
-    const itemsCanDelete: string[] = []
+    const selectedItemsSet = new Set(selectedItems)
+    const undeletableParentMessages: string[] = []
 
-    selectedItems.forEach((id) => {
-      const item = doiTuongList.find((x) => x.id === id)
-      if (item) {
-        if (hasChildren(id)) {
-          itemsWithChildren.push(`${item.code} - ${item.nameVi}`)
-        } else {
-          itemsCanDelete.push(`${item.code} - ${item.nameVi}`)
+    // Pass 1: Identify all selected parents that cannot be deleted
+    for (const selectedId of selectedItems) {
+      const item = doiTuongList.find((x) => x.id === selectedId)
+      if (!item) continue // Should not happen if selectedItems are valid IDs
+
+      const childrenObjects = getAllChildrenObjects(item.id, doiTuongList)
+
+      if (childrenObjects.length > 0) {
+        // This is a parent item
+        const missingChildren = childrenObjects.filter((child) => !selectedItemsSet.has(child.id))
+
+        if (missingChildren.length > 0) {
+          // Parent is selected, but not all its children are selected
+          const missingNames =
+            missingChildren
+              .map((c) => `${c.code} - ${c.nameVi}`)
+              .slice(0, 3)
+              .join(", ") + (missingChildren.length > 3 ? "..." : "")
+          undeletableParentMessages.push(
+            `Đối tượng "${item.code} - ${item.nameVi}" không thể xóa vì còn con chưa chọn: ${missingNames}`,
+          )
         }
       }
-    })
+    }
 
-    // Nếu có đối tượng có con, thông báo lỗi
-    if (itemsWithChildren.length > 0) {
-      const itemsList = itemsWithChildren.slice(0, 5).join("\n")
-      const moreItems = itemsWithChildren.length > 5 ? `\n... và ${itemsWithChildren.length - 5} đối tượng khác` : ""
-
+    if (undeletableParentMessages.length > 0) {
       alert(
-        `Không thể xóa ${itemsWithChildren.length} đối tượng sau vì chúng có đối tượng con:\n\n${itemsList}${moreItems}\n\nVui lòng xóa tất cả các đối tượng con trước khi xóa đối tượng cha.`,
+        `Không thể xóa các đối tượng sau:\n\n${undeletableParentMessages.join(
+          "\n",
+        )}\n\nVui lòng bỏ chọn hoặc chọn tất cả các đối tượng con của chúng.`,
       )
       return
     }
 
-    // Nếu tất cả đối tượng đều có thể xóa
-    if (itemsCanDelete.length > 0) {
-      const confirmMessage = `Bạn có chắc chắn muốn xóa ${itemsCanDelete.length} đối tượng đã chọn không?\n\n${itemsCanDelete.slice(0, 5).join("\n")}${itemsCanDelete.length > 5 ? `\n... và ${itemsCanDelete.length - 5} đối tượng khác` : ""}`
-
-      if (window.confirm(confirmMessage)) {
-        setDoiTuongList((prev) => prev.filter((x) => !selectedItems.includes(x.id)))
-        setSelectedItems([])
-        console.log(`Đã xóa thành công ${itemsCanDelete.length} đối tượng`)
-      }
+    // Pass 2: If no undeletable parents, then all selected items can be deleted
+    const confirmMessage = `Bạn có chắc chắn muốn xóa ${selectedItems.length} đối tượng đã chọn không?`
+    if (window.confirm(confirmMessage)) {
+      setDoiTuongList((prev) => prev.filter((x) => !selectedItemsSet.has(x.id)))
+      setSelectedItems([])
+      console.log(`Đã xóa thành công ${selectedItems.length} đối tượng`)
     }
-  }, [selectedItems, doiTuongList, hasChildren])
+  }, [selectedItems, doiTuongList, getAllChildrenObjects])
 
   const handleSelectAll = useCallback(
     (checked: boolean) => setSelectedItems(checked ? displayed.map(({ item }) => item.id) : []),
@@ -549,7 +573,8 @@ const CostObjectPage: React.FC = () => {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate network delay
+      setDoiTuongList(generateMockData(1000)) // Regenerate mock data
       console.log("Dữ liệu đã được làm mới")
     } catch (error) {
       console.error("Lỗi khi làm mới dữ liệu:", error)
@@ -802,7 +827,15 @@ const CostObjectPage: React.FC = () => {
         </div>
 
         {/* TABLE */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto relative">
+          {isRefreshing && (
+            <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center z-30">
+              <div className="flex flex-col items-center">
+                <Icons.Loader2 className="h-8 w-8 animate-spin text-red-600 mb-4" />
+                <p className="text-gray-700">Đang tải dữ liệu...</p>
+              </div>
+            </div>
+          )}
           <table className="min-w-full table-auto">
             <thead className="bg-red-50">
               <tr>
@@ -850,117 +883,160 @@ const CostObjectPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {displayed.map(({ item, depth }) => {
-                const hasChildrenItems = Boolean(childrenMap[item.id]?.length)
-                const isExpanded = expandedParents.includes(item.id)
-
-                return (
-                  <tr
-                    key={item.id}
-                    className="group hover:bg-gray-50"
-                    onMouseEnter={() => setHoveredRowId(item.id)}
-                    onMouseLeave={() => setHoveredRowId(null)}
-                  >
-                    <td
-                      className="sticky left-0 z-15 bg-white px-4 py-3 group-hover:bg-gray-50"
-                      style={{
-                        width: "30px",
-                        minWidth: "30px",
-                        maxWidth: "30px",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.includes(item.id)}
-                        onChange={(e) => handleSelectOne(item.id, e.target.checked)}
-                        className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-                      />
-                    </td>
-                    {getOrderedColumns.map((col) => (
+              {isRefreshing
+                ? // Skeleton rows when loading
+                  Array.from({ length: itemsPerPage }).map((_, rowIndex) => (
+                    <tr key={`skeleton-${rowIndex}`} className="animate-pulse">
                       <td
-                        key={col.id}
-                        className="px-4 py-3 group-hover:bg-gray-50"
+                        className="sticky left-0 z-15 bg-white px-4 py-3"
                         style={{
-                          width: col.width,
-                          minWidth: col.width,
-                          ...getColumnStyle(col),
+                          width: "30px",
+                          minWidth: "30px",
+                          maxWidth: "30px",
                         }}
                       >
-                        {col.dataField === "code" ? (
-                          <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
-                            {hasChildrenItems && (
-                              <button onClick={() => toggleExpand(item.id)} className="ml-[-17px] mr-0">
-                                {isExpanded ? <Icons.ChevronDown size={16} /> : <Icons.ChevronRight size={16} />}
-                              </button>
-                            )}
-                            <span className={depth > 0 ? "text-gray-600" : "font-medium text-gray-900"}>
-                              {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
-                            </span>
-                          </div>
-                        ) : col.dataField === "parentObject" ? (
-                          <span className="text-sm text-gray-600">
-                            {item.parentObject === "0" || !item.parentObject ? (
-                              <span className="text-gray-400 italic">Không có cha</span>
-                            ) : (
-                              (() => {
-                                const parent = doiTuongList.find((p) => p.id === item.parentObject)
-                                return parent ? `${parent.code} - ${parent.nameVi}` : item.parentObject
-                              })()
-                            )}
-                          </span>
-                        ) : col.dataField === "notes" ? (
-                          <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
-                            {item.notes}
-                          </span>
-                        ) : (
-                          <span>{item[col.dataField as keyof DoiTuongTapHopChiPhi]}</span>
-                        )}
+                        <div className="h-4 w-4 bg-gray-200 rounded" />
                       </td>
-                    ))}
-                    {/* Cột hành động (Edit/Delete) */}
-                    <td
-                      className="sticky group-hover:bg-gray-50 right-0 z-10 px-1 py-3 text-center"
-                      style={{
-                        width: "100px",
-                        minWidth: "100px",
-                        maxWidth: "100px",
-                      }}
-                    >
-                      <div className="flex items-center justify-center space-x-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
-                        {/* Sửa */}
-                        <div className="relative">
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="peer p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          >
-                            <Icons.Edit size={16} />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 peer-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
-                            Sửa
-                          </div>
+                      {getOrderedColumns.map((col) => (
+                        <td
+                          key={`skeleton-${rowIndex}-${col.id}`}
+                          className="px-4 py-3"
+                          style={{
+                            width: col.width,
+                            minWidth: col.width,
+                            ...getColumnStyle(col),
+                          }}
+                        >
+                          <div className="h-4 bg-gray-200 rounded" style={{ width: `${Math.random() * 70 + 30}%` }} />
+                        </td>
+                      ))}
+                      <td
+                        className="sticky right-0 z-10 bg-white px-1 py-3 text-center"
+                        style={{
+                          width: "100px",
+                          minWidth: "100px",
+                          maxWidth: "100px",
+                        }}
+                      >
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="h-6 w-6 bg-gray-200 rounded-lg" />
+                          <div className="h-6 w-6 bg-gray-200 rounded-lg" />
                         </div>
+                      </td>
+                    </tr>
+                  ))
+                : // Actual data rows when not loading
+                  displayed.map(({ item, depth }) => {
+                    const hasChildrenItems = Boolean(childrenMap[item.id]?.length)
+                    const isExpanded = expandedParents.includes(item.id)
 
-                        {/* Xóa */}
-                        <div className="relative">
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="peer p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    return (
+                      <tr
+                        key={item.id}
+                        className="group hover:bg-gray-50"
+                        onMouseEnter={() => setHoveredRowId(item.id)}
+                        onMouseLeave={() => setHoveredRowId(null)}
+                      >
+                        <td
+                          className="sticky left-0 z-15 bg-white px-4 py-3 group-hover:bg-gray-50"
+                          style={{
+                            width: "30px",
+                            minWidth: "30px",
+                            maxWidth: "30px",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.includes(item.id)}
+                            onChange={(e) => handleSelectOne(item.id, e.target.checked)}
+                            className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                          />
+                        </td>
+                        {getOrderedColumns.map((col) => (
+                          <td
+                            key={col.id}
+                            className="px-4 py-3 group-hover:bg-gray-50"
+                            style={{
+                              width: col.width,
+                              minWidth: col.width,
+                              ...getColumnStyle(col),
+                            }}
                           >
-                            <Icons.Trash2 size={16} />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 peer-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
-                            Xóa
+                            {col.dataField === "code" ? (
+                              <div className="flex items-center" style={{ marginLeft: depth * 20 }}>
+                                {hasChildrenItems && (
+                                  <button onClick={() => toggleExpand(item.id)} className="ml-[-17px] mr-0">
+                                    {isExpanded ? <Icons.ChevronDown size={16} /> : <Icons.ChevronRight size={16} />}
+                                  </button>
+                                )}
+                                <span className={depth > 0 ? "text-gray-600" : "font-medium text-gray-900"}>
+                                  {item[col.dataField as keyof DoiTuongTapHopChiPhi]}
+                                </span>
+                              </div>
+                            ) : col.dataField === "parentObject" ? (
+                              <span className="text-sm text-gray-600">
+                                {item.parentObject === "0" || !item.parentObject ? (
+                                  <span className="text-gray-400 italic">Không có cha</span>
+                                ) : (
+                                  (() => {
+                                    const parent = doiTuongList.find((p) => p.id === item.parentObject)
+                                    return parent ? `${parent.code} - ${parent.nameVi}` : item.parentObject
+                                  })()
+                                )}
+                              </span>
+                            ) : col.dataField === "notes" ? (
+                              <span className="text-sm text-gray-600 truncate max-w-xs block" title={item.notes}>
+                                {item.notes}
+                              </span>
+                            ) : (
+                              <span>{item[col.dataField as keyof DoiTuongTapHopChiPhi]}</span>
+                            )}
+                          </td>
+                        ))}
+                        {/* Cột hành động (Edit/Delete) */}
+                        <td
+                          className="sticky group-hover:bg-gray-50 right-0 z-10 px-1 py-3 text-center"
+                          style={{
+                            width: "100px",
+                            minWidth: "100px",
+                            maxWidth: "100px",
+                          }}
+                        >
+                          <div className="flex items-center justify-center space-x-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
+                            {/* Sửa */}
+                            <div className="relative">
+                              <button
+                                onClick={() => handleEdit(item)}
+                                className="peer p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              >
+                                <Icons.Edit size={16} />
+                              </button>
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 peer-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+                                Sửa
+                              </div>
+                            </div>
+
+                            {/* Xóa */}
+                            <div className="relative">
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className="peer p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <Icons.Trash2 size={16} />
+                              </button>
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 peer-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+                                Xóa
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+                        </td>
+                      </tr>
+                    )
+                  })}
             </tbody>
           </table>
 
-          {filteredData.length === 0 && (
+          {filteredData.length === 0 && !isRefreshing && (
             <div className="text-center py-8">
               <Icons.Building2 size={48} className="mx-auto text-gray-300 mb-4" />
               <p className="text-gray-500">Không tìm thấy dữ liệu nào</p>
@@ -1289,7 +1365,7 @@ const CostObjectPage: React.FC = () => {
         </div>
       )}
     </div>
-  ) 
+  )
 }
 
 export default CostObjectPage

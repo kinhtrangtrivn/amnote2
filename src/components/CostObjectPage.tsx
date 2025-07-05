@@ -9,6 +9,7 @@ import * as Icons from "lucide-react"
 import ExcelImportModal from "./ExcelImportModal"
 import PrintModal from "./PrintModal"
 import Pagination from "./Pagination/Pagination"
+import { SearchableSelect } from "@/components/searchable-select"
 
 /** Mô tả cấu trúc một đối tượng tập hợp chi phí */
 interface DoiTuongTapHopChiPhi {
@@ -656,7 +657,7 @@ const CostObjectPage: React.FC = () => {
         console.error("Lỗi khi tải thư viện Excel:", error)
         alert("Có lỗi xảy ra khi tải thư viện Excel. Vui lòng thử lại.")
       })
-  }, [displayed, doiTuongList])
+  }, [doiTuongList])
 
   const handleColumnConfigChange = useCallback((columnId: string, field: keyof ColumnConfig, value: any) => {
     setColumnConfigs((prev) => prev.map((col) => (col.id === columnId ? { ...col, [field]: value } : col)))
@@ -697,6 +698,13 @@ const CostObjectPage: React.FC = () => {
 
     return doiTuongList.filter((opt) => !excludedIds.includes(opt.id))
   }, [editingItem, doiTuongList, getAllChildren])
+
+  const getValidParentOptionsForSelect = useMemo(() => {
+    return getValidParentOptions.map((opt) => ({
+      value: opt.id,
+      label: `${opt.code} – ${opt.nameVi}`,
+    }))
+  }, [getValidParentOptions])
 
   // Tối ưu: Debounce search để tránh re-render liên tục
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
@@ -1243,8 +1251,8 @@ const CostObjectPage: React.FC = () => {
       {/* MODAL THÊM/SỬA */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b py-4 px-4">
               <h2 className="text-xl font-bold text-gray-900">
                 {editingItem ? "Chỉnh sửa đối tượng" : "Thêm mới đối tượng"}
               </h2>
@@ -1252,87 +1260,84 @@ const CostObjectPage: React.FC = () => {
                 <Icons.X size={20} className="text-gray-500" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              {/* Mã & Đối tượng gốc */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mã đối tượng <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.code}
-                    onChange={(e) => setFormData((d) => ({ ...d, code: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                    placeholder="Nhập mã đối tượng"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Đối tượng gốc
-                    {editingItem && (
-                      <span className="text-xs text-gray-500 ml-2">(Ẩn đối tượng hiện tại và các con)</span>
+            <div className="flex-1 overflow-y-auto">
+              <form onSubmit={handleSubmit} className="p-6 space-y-6 px-4">
+                {/* Mã & Đối tượng gốc */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Mã đối tượng <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.code}
+                      onChange={(e) => setFormData((d) => ({ ...d, code: e.target.value }))}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                      placeholder="Nhập mã đối tượng"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Đối tượng gốc
+                      {editingItem && (
+                        <span className="text-xs text-gray-500 ml-2">(Ẩn đối tượng hiện tại và các con)</span>
+                      )}
+                    </label>
+                    <SearchableSelect
+                      options={[{ value: "0", label: "Không có cha" }, ...getValidParentOptionsForSelect]}
+                      value={formData.parentObject}
+                      onValueChange={(value) => setFormData((d) => ({ ...d, parentObject: value }))}
+                      placeholder="Chọn đối tượng gốc"
+                      emptyMessage="Không tìm thấy đối tượng"
+                      className="w-full"
+                    />
+                    {editingItem && getValidParentOptions.length < doiTuongList.length - 1 && (
+                      <div className="mt-1 text-xs text-amber-600 flex items-center">
+                        <Icons.Info size={12} className="mr-1" />
+                        Một số tùy chọn bị ẩn để tránh vòng lặp phân cấp
+                      </div>
                     )}
-                  </label>
-                  <select
-                    value={formData.parentObject}
-                    onChange={(e) => setFormData((d) => ({ ...d, parentObject: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                  >
-                    <option value="0">Không có cha</option>
-                    {getValidParentOptions.map((opt) => (
-                      <option key={opt.id} value={opt.id}>
-                        {opt.code} – {opt.nameVi}
-                      </option>
-                    ))}
-                  </select>
-                  {editingItem && getValidParentOptions.length < doiTuongList.length - 1 && (
-                    <div className="mt-1 text-xs text-amber-600 flex items-center">
-                      <Icons.Info size={12} className="mr-1" />
-                      Một số tùy chọn bị ẩn để tránh vòng lặp phân cấp
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Tên & Ghi chú */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tên tiếng Việt <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.nameVi}
-                    onChange={(e) => setFormData((d) => ({ ...d, nameVi: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                    placeholder="Nhập tên tiếng Việt"
-                  />
+                {/* Tên tiếng Việt, tiếng Anh, tiếng Hàn */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tên tiếng Việt <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.nameVi}
+                      onChange={(e) => setFormData((d) => ({ ...d, nameVi: e.target.value }))}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                      placeholder="Nhập tên tiếng Việt"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Anh</label>
+                    <input
+                      type="text"
+                      value={formData.nameEn}
+                      onChange={(e) => setFormData((d) => ({ ...d, nameEn: e.target.value }))}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                      placeholder="Nhập tên tiếng Anh"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Hàn</label>
+                    <input
+                      type="text"
+                      value={formData.nameKo}
+                      onChange={(e) => setFormData((d) => ({ ...d, nameKo: e.target.value }))}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                      placeholder="Nhập tên tiếng Hàn"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Anh</label>
-                  <input
-                    type="text"
-                    value={formData.nameEn}
-                    onChange={(e) => setFormData((d) => ({ ...d, nameEn: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                    placeholder="Nhập tên tiếng Anh"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tên tiếng Hàn</label>
-                  <input
-                    type="text"
-                    value={formData.nameKo}
-                    onChange={(e) => setFormData((d) => ({ ...d, nameKo: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                    placeholder="Nhập tên tiếng Hàn"
-                  />
-                </div>
+                {/* Ghi chú */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Ghi chú</label>
                   <textarea
@@ -1342,25 +1347,24 @@ const CostObjectPage: React.FC = () => {
                     placeholder="Nhập ghi chú"
                   />
                 </div>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex justify-end space-x-4 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2"
-                >
-                  <Icons.Save size={16} /> <span>{editingItem ? "Cập nhật" : "Thêm mới"}</span>
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
+            {/* Buttons */}
+            <div className="flex justify-end space-x-4 pt-4 border-t flex-shrink-0 pr-4 pb-4">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2"
+              >
+                <Icons.Save size={16} /> <span>{editingItem ? "Cập nhật" : "Thêm mới"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

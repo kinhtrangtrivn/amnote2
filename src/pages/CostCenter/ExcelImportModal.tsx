@@ -1192,7 +1192,7 @@ export default function ExcelImportModal({ isOpen, onClose, onImport, existingDa
                             <td className="px-4 py-4 text-sm text-gray-900 truncate" title={result.data.notes || ""}>
                               {result.data.notes || ""}
                             </td>
-                            <td className="px-4 py-4">
+                            <td className="px-4 py-4" style={{ width: "250px" }}>
                               {result.errors.length > 0 && (
                                 <div className="text-sm text-red-600">
                                   {result.errors.map((error, idx) => (

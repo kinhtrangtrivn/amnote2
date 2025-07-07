@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Bell, Menu, ChevronDown, User, Settings, LogOut, HelpCircle, AlertTriangle, Clock, CheckCircle, X, Globe } from 'lucide-react';
 
 interface HeaderProps {
@@ -74,6 +75,8 @@ const notifications: Notification[] = [
 ];
 
 export default function Header({ onToggleSidebar, onLogout, onMenuSelect }: HeaderProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
@@ -110,17 +113,17 @@ export default function Header({ onToggleSidebar, onLogout, onMenuSelect }: Head
 
   const handleLogout = () => {
     closeDropdowns();
-    onLogout();
+    navigate('/login');
   };
 
   const handleProfileClick = () => {
     closeDropdowns();
-    onMenuSelect('profile');
+    navigate('/profile');
   };
 
   const handleHelpClick = () => {
     closeDropdowns();
-    onMenuSelect('help-support');
+    navigate('/help-support');
   };
 
   const getNotificationIcon = (type: string) => {
@@ -163,7 +166,7 @@ export default function Header({ onToggleSidebar, onLogout, onMenuSelect }: Head
             <Menu size={20} className="text-gray-600" />
           </button>
           
-          <div class="hidden sm:block ">
+          <div className="hidden sm:block">
             <div className="flex items-center space-x-2 text-xs text-gray-500">
               <span>Trang chủ</span>
               <span>/</span>

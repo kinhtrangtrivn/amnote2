@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Globe, Building2, User, Lock, AlertCircle, CheckCircle, ArrowRight } from 'lucide-react';
 
 interface Language {
@@ -20,6 +21,7 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
+  const navigate = useNavigate();
   const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -50,7 +52,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Automatically log in regardless of form data
-      onLogin();
+      navigate('/');
     } catch (error) {
       console.error('Login error:', error);
     } finally {

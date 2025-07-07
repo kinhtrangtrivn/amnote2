@@ -5,7 +5,7 @@ import Header from './components/Header';
 import DashboardOverview from './components/DashboardOverview';
 import ModuleContent from './components/ModuleContent';
 import LoginPage from './components/LoginPage';
-import CostObjectPage from './components/CostObjectPage';
+import CostObjectPage from './pages/CostCenter';
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

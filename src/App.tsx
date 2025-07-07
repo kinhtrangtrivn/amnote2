@@ -8,7 +8,7 @@ import LoginPage from './components/LoginPage';
 import CostObjectPage from './pages/CostCenter';
 
 function AppContent() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // Đặt mặc định là true để test
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);

@@ -8,7 +8,7 @@ import * as Icons from "lucide-react"
 
 import ExcelImportModal from "./ExcelImportModal"
 import PrintModal from "./PrintModal"
-import Pagination from "./Pagination/Pagination"
+import Pagination from "./Pagination"
 
 const LOCAL_STORAGE_COLUMN_CONFIGS_KEY = "costObjectTableColumnConfigs"
 

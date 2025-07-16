@@ -311,7 +311,7 @@ export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobil
                     </button>
                     
                     {/* Submenu */}
-                    {item.subItems && expandedMenus.includes(item.id) && (
+                    {item.subItems && (expandedMenus.includes(item.id) || activeMenu === item.id) && (
                       <div className="ml-6 mt-1 space-y-1">
                         {item.subItems.map((subItem) => (
                           <button

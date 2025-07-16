@@ -171,7 +171,7 @@ function AppContent() {
           </Routes>
         </main>
       </div>
-    </div>
+    </div> 
   );
 }
 

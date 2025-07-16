@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   BarChart3, 
   Database, 
@@ -52,6 +53,7 @@ interface MenuItem {
 interface SubMenuItem {
   id: string;
   title: string;
+  path: string; // Add path for each submenu item
 }
 
 const menuGroups: MenuGroup[] = [
@@ -71,21 +73,21 @@ const menuGroups: MenuGroup[] = [
         title: 'Quản lý Dữ liệu Cơ Bản', 
         icon: 'Database',
         subItems: [
-          { id: 'company-management', title: 'Quản lý công ty' },
-          { id: 'user-management', title: 'Quản lý người dùng' },
-          { id: 'cost-center', title: 'Đối tượng tập hợp chi phí' },
-          { id: 'customer-management', title: 'Quản lý khách hàng' },
-          { id: 'bank-management', title: 'Quản lý ngân hàng' },
-          { id: 'code-registration', title: 'Đăng ký mã quản lý' },
-          { id: 'account-management', title: 'Quản lý tài khoản' },
-          { id: 'warehouse-management', title: 'Quản lý kho bãi' },
-          { id: 'warehouse-category', title: 'Quản lý thể loại kho' },
-          { id: 'inventory-declaration', title: 'Khai báo hàng tồn kho' },
-          { id: 'material-group', title: 'Quản lý mã nhóm vật tư' },
-          { id: 'unit-management', title: 'Quản lý mã đơn vị tính' },
-          { id: 'standard-management', title: 'Quản lý mã tiêu chuẩn' },
-          { id: 'note-management', title: 'Quản lý ghi chú' },
-          { id: 'contract-management', title: 'Quản lý hợp đồng' }
+          { id: 'company-management', title: 'Quản lý công ty', path: '/company-management' },
+          { id: 'user-management', title: 'Quản lý người dùng', path: '/user-management' },
+          { id: 'cost-center', title: 'Đối tượng tập hợp chi phí', path: '/cost-center' },
+          { id: 'customer-management', title: 'Quản lý khách hàng', path: '/customer-management' },
+          { id: 'bank-management', title: 'Quản lý ngân hàng', path: '/bank-management' },
+          { id: 'code-registration', title: 'Đăng ký mã quản lý', path: '/code-registration' },
+          { id: 'account-management', title: 'Quản lý tài khoản', path: '/account-management' },
+          { id: 'warehouse-management', title: 'Quản lý kho bãi', path: '/warehouse-management' },
+          { id: 'warehouse-category', title: 'Quản lý thể loại kho', path: '/warehouse-category' },
+          { id: 'inventory-declaration', title: 'Khai báo hàng tồn kho', path: '/inventory-declaration' },
+          { id: 'material-group', title: 'Quản lý mã nhóm vật tư', path: '/material-group' },
+          { id: 'unit-management', title: 'Quản lý mã đơn vị tính', path: '/unit-management' },
+          { id: 'standard-management', title: 'Quản lý mã tiêu chuẩn', path: '/standard-management' },
+          { id: 'note-management', title: 'Quản lý ghi chú', path: '/note-management' },
+          { id: 'contract-management', title: 'Quản lý hợp đồng', path: '/contract-management' }
         ]
       }
     ]
@@ -165,8 +167,57 @@ const iconMap: { [key: string]: React.ReactNode } = {
 };
 
 export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobile = false }: SidebarProps) {
+  const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Function to find which parent menu contains the current active item
+  const findParentMenu = (currentPath: string) => {
+    for (const group of menuGroups) {
+      for (const item of group.items) {
+        if (item.subItems) {
+          for (const subItem of item.subItems) {
+            if (subItem.path === currentPath) {
+              return item.id;
+            }
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  // Function to get active menu ID from current path
+  const getActiveMenuFromPath = (pathname: string) => {
+    if (pathname === '/') return 'dashboard';
+    
+    // Check submenus first
+    for (const group of menuGroups) {
+      for (const item of group.items) {
+        if (item.subItems) {
+          for (const subItem of item.subItems) {
+            if (subItem.path === pathname) {
+              return subItem.id;
+            }
+          }
+        }
+      }
+    }
+    
+    // Check main menu items
+    const pathWithoutSlash = pathname.substring(1);
+    return pathWithoutSlash || 'dashboard';
+  };
+
+  // Initialize expanded menus based on current location
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const parentMenu = findParentMenu(currentPath);
+    
+    if (parentMenu && !expandedMenus.includes(parentMenu)) {
+      setExpandedMenus(prev => [...prev, parentMenu]);
+    }
+  }, [location.pathname]);
 
   const toggleSubmenu = (menuId: string) => {
     setExpandedMenus(prev => 
@@ -175,6 +226,24 @@ export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobil
         : [...prev, menuId]
     );
   };
+
+  const handleMenuClick = (item: MenuItem | SubMenuItem, path?: string) => {
+    if ('path' in item && item.path) {
+      // This is a submenu item with a path
+      onMenuSelect(item.path.substring(1)); // Remove leading slash
+    } else if (!('path' in item) && !item.subItems) {
+      // This is a main menu item without subItems
+      onMenuSelect(item.id);
+    }
+    
+    // Close sidebar on mobile after menu selection
+    if (isMobile) {
+      // This would need to be handled by parent component
+    }
+  };
+
+  // Get current active menu ID
+  const currentActiveMenu = getActiveMenuFromPath(location.pathname);
 
   // Filter menu items based on search term
   const filterMenuItems = (groups: MenuGroup[]) => {
@@ -216,15 +285,15 @@ export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobil
                 {group.items.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => onMenuSelect(item.id)}
+                    onClick={() => handleMenuClick(item)}
                     className={`w-full flex items-center justify-center p-3 rounded-lg transition-all duration-200 ${
-                      activeMenu === item.id
+                      currentActiveMenu === item.id
                         ? 'bg-red-50 text-red-700'
                         : 'text-gray-700 hover:bg-gray-50'
                     }`}
                     title={item.title}
                   >
-                    <div className={`${activeMenu === item.id ? 'text-red-600' : 'text-gray-400'}`}>
+                    <div className={`${currentActiveMenu === item.id ? 'text-red-600' : 'text-gray-400'}`}>
                       {iconMap[item.icon]}
                     </div>
                   </button>
@@ -282,21 +351,21 @@ export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobil
                         if (item.subItems) {
                           toggleSubmenu(item.id);
                         } else {
-                          onMenuSelect(item.id);
+                          handleMenuClick(item);
                         }
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2.5 text-left rounded-lg transition-all duration-200 ${
-                        activeMenu === item.id
+                        currentActiveMenu === item.id
                           ? 'bg-red-50 text-red-700 border-l-3 border-red-600'
                           : 'text-gray-700 hover:bg-gray-50'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className={`flex-shrink-0 ${activeMenu === item.id ? 'text-red-600' : 'text-gray-400'}`}>
+                        <div className={`flex-shrink-0 ${currentActiveMenu === item.id ? 'text-red-600' : 'text-gray-400'}`}>
                           {iconMap[item.icon]}
                         </div>
                         <span className={`text-sm font-medium ${
-                          activeMenu === item.id ? 'text-red-700' : 'text-gray-700'
+                          currentActiveMenu === item.id ? 'text-red-700' : 'text-gray-700'
                         }`}>
                           {item.title}
                         </span>
@@ -311,15 +380,15 @@ export default function Sidebar({ activeMenu, onMenuSelect, isCollapsed, isMobil
                     </button>
                     
                     {/* Submenu */}
-                    {item.subItems && (expandedMenus.includes(item.id) || activeMenu === item.id) && (
+                    {item.subItems && expandedMenus.includes(item.id) && (
                       <div className="ml-6 mt-1 space-y-1">
                         {item.subItems.map((subItem) => (
                           <button
                             key={subItem.id}
-                            onClick={() => onMenuSelect(subItem.id)}
+                            onClick={() => handleMenuClick(subItem)}
                             className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
-                              activeMenu === subItem.id
-                                ? 'bg-red-50 text-red-700'
+                              currentActiveMenu === subItem.id
+                                ? 'bg-red-50 text-red-700 font-medium border-l-2 border-red-500'
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                             }`}
                           >

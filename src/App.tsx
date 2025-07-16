@@ -16,13 +16,8 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get current active menu from URL
-  const getActiveMenuFromPath = (pathname: string) => {
-    if (pathname === '/') return 'dashboard';
-    return pathname.substring(1); // Remove leading slash
-  };
-
-  const activeMenu = getActiveMenuFromPath(location.pathname);
+  // Get current active menu from URL - simplified since Sidebar handles this now
+  const activeMenu = location.pathname === '/' ? 'dashboard' : location.pathname.substring(1);
 
   // Check if screen is mobile size
   useEffect(() => {
@@ -53,11 +48,13 @@ function AppContent() {
   };
 
   const handleMenuSelect = (menuId: string) => {
-    // Navigate to the corresponding route
-    if (menuId === 'dashboard') {
+    // Handle navigation - menuId might be a path or just an ID
+    if (menuId === 'dashboard' || menuId === '') {
       navigate('/');
     } else {
-      navigate(`/${menuId}`);
+      // If menuId already starts with /, use it as is, otherwise add /
+      const path = menuId.startsWith('/') ? menuId : `/${menuId}`;
+      navigate(path);
     }
     
     // Close sidebar on mobile after menu selection

@@ -6,6 +6,11 @@ import DashboardOverview from './components/DashboardOverview';
 import ModuleContent from './components/ModuleContent';
 import LoginPage from './components/LoginPage';
 import CostObjectPage from './pages/CostCenter';
+import BankManagementPage from './pages/BankManagementPage';
+import CustomerManagementPage from "./pages/CustomerManagementPage"; // Adjust the path if necessary
+import Kho from "./pages/kho";
+import MaterialGroup from "./pages/MaterialGroup";
+
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(true); // Đặt mặc định là true để test
@@ -125,7 +130,8 @@ function AppContent() {
             <Route path="/" element={<DashboardOverview />} />
             <Route path="/dashboard" element={<Navigate to="/" replace />} />
             <Route path="/cost-center" element={<CostObjectPage />} />
-            <Route path="/bank-management" element={<ModuleContent moduleId="bank-management" />} />
+
+            <Route path="/bank-management" element={<BankManagementPage />} />
             <Route path="/company-management" element={<ModuleContent moduleId="company-management" />} />
             <Route path="/profile" element={<ModuleContent moduleId="profile" />} />
             <Route path="/help-support" element={<ModuleContent moduleId="help-support" />} />
@@ -133,13 +139,13 @@ function AppContent() {
             {/* All other routes */}
             <Route path="/basic-data" element={<ModuleContent moduleId="basic-data" />} />
             <Route path="/user-management" element={<ModuleContent moduleId="user-management" />} />
-            <Route path="/customer-management" element={<ModuleContent moduleId="customer-management" />} />
+            <Route path="/customer-management" element={<CustomerManagementPage />} />
             <Route path="/code-registration" element={<ModuleContent moduleId="code-registration" />} />
             <Route path="/account-management" element={<ModuleContent moduleId="account-management" />} />
-            <Route path="/warehouse-management" element={<ModuleContent moduleId="warehouse-management" />} />
+            <Route path="/warehouse-management" element={<Kho />} />
             <Route path="/warehouse-category" element={<ModuleContent moduleId="warehouse-category" />} />
             <Route path="/inventory-declaration" element={<ModuleContent moduleId="inventory-declaration" />} />
-            <Route path="/material-group" element={<ModuleContent moduleId="material-group" />} />
+            <Route path="/material-group" element={<MaterialGroup />} />
             <Route path="/unit-management" element={<ModuleContent moduleId="unit-management" />} />
             <Route path="/standard-management" element={<ModuleContent moduleId="standard-management" />} />
             <Route path="/note-management" element={<ModuleContent moduleId="note-management" />} />

@@ -5,12 +5,7 @@ import Header from './components/Header';
 import DashboardOverview from './components/DashboardOverview';
 import ModuleContent from './components/ModuleContent';
 import LoginPage from './components/LoginPage';
-import CostObjectPage from './pages/CostCenter';
-import BankManagementPage from './pages/BankManagementPage';
-import CustomerManagementPage from "./pages/CustomerManagementPage"; // Adjust the path if necessary
-import Kho from "./pages/kho";
-import MaterialGroup from "./pages/MaterialGroup";
-import UnitManagementPage from "./pages/UnitManagement";
+
 
 
 function AppContent() {

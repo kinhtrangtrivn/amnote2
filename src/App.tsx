@@ -6,29 +6,48 @@ import DashboardOverview from './components/DashboardOverview';
 import ModuleContent from './components/ModuleContent';
 import LoginPage from './components/LoginPage';
 import CostObjectPage from './pages/CostCenter';
- 
+import BankManagementPage from './pages/BankManagementPage';
+import CustomerManagementPage from "./pages/CustomerManagementPage"; // Adjust the path if necessary
+import Kho from "./pages/kho";
+import MaterialGroup from "./pages/MaterialGroup";
+import UnitManagementPage from "./pages/UnitManagement";
+
+
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(true); // Đặt mặc định là true để test
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  // Persist sidebarCollapsed in localStorage
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const stored = localStorage.getItem('sidebar-collapsed');
+    return stored ? stored === 'true' : false;
+  });
+  // Khởi tạo isMobile ngay từ đầu để tránh flash
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get current active menu from URL - simplified since Sidebar handles this now
-  const activeMenu = location.pathname === '/' ? 'dashboard' : location.pathname.substring(1);
+  // Get current active menu from URL
+  const getActiveMenuFromPath = (pathname: string) => {
+    if (pathname === '/') return 'dashboard';
+    return pathname.substring(1); // Remove leading slash
+  };
+
+  const activeMenu = getActiveMenuFromPath(location.pathname);
 
   // Check if screen is mobile size
   useEffect(() => {
     const checkScreenSize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      
-      // On mobile, sidebar should be closed by default
+      // Đảm bảo sidebar đóng ngay khi detect mobile
       if (mobile) {
         setSidebarOpen(false);
-        setSidebarCollapsed(false); // Reset collapsed state on mobile
       }
     };
 
@@ -36,6 +55,14 @@ function AppContent() {
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
+
+
+  // Persist sidebarCollapsed to localStorage when it changes (desktop only)
+  useEffect(() => {
+    if (!isMobile) {
+      localStorage.setItem('sidebar-collapsed', sidebarCollapsed ? 'true' : 'false');
+    }
+  }, [sidebarCollapsed, isMobile]);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
@@ -48,13 +75,11 @@ function AppContent() {
   };
 
   const handleMenuSelect = (menuId: string) => {
-    // Handle navigation - menuId might be a path or just an ID
-    if (menuId === 'dashboard' || menuId === '') {
+    // Navigate to the corresponding route
+    if (menuId === 'dashboard') {
       navigate('/');
     } else {
-      // If menuId already starts with /, use it as is, otherwise add /
-      const path = menuId.startsWith('/') ? menuId : `/${menuId}`;
-      navigate(path);
+      navigate(`/${menuId}`);
     }
     
     // Close sidebar on mobile after menu selection
@@ -67,7 +92,10 @@ function AppContent() {
     if (isMobile) {
       setSidebarOpen(!sidebarOpen);
     } else {
-      setSidebarCollapsed(!sidebarCollapsed);
+      setSidebarCollapsed((prev) => {
+        localStorage.setItem('sidebar-collapsed', !prev ? 'true' : 'false');
+        return !prev;
+      });
     }
   };
 
@@ -122,7 +150,8 @@ function AppContent() {
             <Route path="/" element={<DashboardOverview />} />
             <Route path="/dashboard" element={<Navigate to="/" replace />} />
             <Route path="/cost-center" element={<CostObjectPage />} />
-            <Route path="/bank-management" element={<ModuleContent moduleId="bank-management" />} />
+
+            <Route path="/bank-management" element={<BankManagementPage />} />
             <Route path="/company-management" element={<ModuleContent moduleId="company-management" />} />
             <Route path="/profile" element={<ModuleContent moduleId="profile" />} />
             <Route path="/help-support" element={<ModuleContent moduleId="help-support" />} />
@@ -130,14 +159,14 @@ function AppContent() {
             {/* All other routes */}
             <Route path="/basic-data" element={<ModuleContent moduleId="basic-data" />} />
             <Route path="/user-management" element={<ModuleContent moduleId="user-management" />} />
-            <Route path="/customer-management" element={<ModuleContent moduleId="customer-management" />} />
+            <Route path="/customer-management" element={<CustomerManagementPage />} />
             <Route path="/code-registration" element={<ModuleContent moduleId="code-registration" />} />
             <Route path="/account-management" element={<ModuleContent moduleId="account-management" />} />
-            <Route path="/warehouse-management" element={<ModuleContent moduleId="warehouse-management" />} />
+            <Route path="/warehouse-management" element={<Kho />} />
             <Route path="/warehouse-category" element={<ModuleContent moduleId="warehouse-category" />} />
             <Route path="/inventory-declaration" element={<ModuleContent moduleId="inventory-declaration" />} />
-            <Route path="/material-group" element={<ModuleContent moduleId="material-group" />} />
-            <Route path="/unit-management" element={<ModuleContent moduleId="unit-management" />} />
+            <Route path="/material-group" element={<MaterialGroup />} />
+            <Route path="/unit-management" element={<UnitManagementPage />} />
             <Route path="/standard-management" element={<ModuleContent moduleId="standard-management" />} />
             <Route path="/note-management" element={<ModuleContent moduleId="note-management" />} />
             <Route path="/contract-management" element={<ModuleContent moduleId="contract-management" />} />
@@ -156,6 +185,22 @@ function AppContent() {
             <Route path="/firmbanking" element={<ModuleContent moduleId="firmbanking" />} />
             <Route path="/e-documents" element={<ModuleContent moduleId="e-documents" />} />
             <Route path="/utilities" element={<ModuleContent moduleId="utilities" />} />
+            
+            {/* Add routes for the submenus under 'summary' */}
+            <Route path="/documents" element={<ModuleContent moduleId="documents" />} />
+            <Route path="/receipt" element={<ModuleContent moduleId="receipt" />} />
+            <Route path="/payment" element={<ModuleContent moduleId="payment" />} />
+            <Route path="/debt-note" element={<ModuleContent moduleId="debt-note" />} />
+            <Route path="/credit-note" element={<ModuleContent moduleId="credit-note" />} />
+            <Route path="/purchase-order" element={<ModuleContent moduleId="purchase-order" />} />
+            <Route path="/service-order" element={<ModuleContent moduleId="service-order" />} />
+            <Route path="/sales-order" element={<ModuleContent moduleId="sales-order" />} />
+            <Route path="/offset-order" element={<ModuleContent moduleId="offset-order" />} />
+            <Route path="/other-order" element={<ModuleContent moduleId="other-order" />} />
+            <Route path="/opening-balance" element={<ModuleContent moduleId="opening-balance" />} />
+            <Route path="/transfer" element={<ModuleContent moduleId="transfer" />} />
+            <Route path="/check-transfer" element={<ModuleContent moduleId="check-transfer" />} />
+            <Route path="/lock" element={<ModuleContent moduleId="lock" />} />
             
             {/* Catch all route - redirect to dashboard */}
             <Route path="*" element={<Navigate to="/" replace />} />
